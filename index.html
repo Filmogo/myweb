@@ -3,426 +3,362 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-  <title>🔥 Tap Fight Club</title>
+  <title>✈️ Crash Mini — Demo</title>
   <meta name="theme-color" content="#0b1226" />
   <style>
-    :root{
-      --vh: 1vh; /* фикс 100vh — обновляем в JS */
-      --bg:#0b1226; --bg2:#0f1f4a;
-      --text:#e8f0ff; --muted:#b3c0ff;
-      --shadow:0 10px 30px rgba(0,0,0,.35), 0 0 40px rgba(80,140,255,.15) inset;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
+    :root{ --vh:1vh; --bg:#0b1226; --bg2:#0f1f4a; --text:#e8f0ff; --muted:#a9b8ff; --ok:#72ffa6; --bad:#ff6a89; --warn:#ffd36a; }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; }
     body{
-      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Noto Sans",Arial;
+      height: calc(var(--vh) * 100); /* стабильный полноценный экран на мобилках */
+      overflow: hidden;
       background:
-        radial-gradient(1200px 800px at 20% 10%, var(--bg2), transparent),
+        radial-gradient(1200px 800px at 15% 10%, var(--bg2), transparent),
         radial-gradient(900px 700px at 80% 90%, #102054, transparent),
         linear-gradient(180deg, var(--bg), var(--bg));
-      color:var(--text);
-      height: calc(var(--vh) * 100);   /* стабильный fullscreen */
-      overflow: hidden;
-      display:flex; align-items:center; justify-content:center;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Noto Sans", Arial;
+      display: flex; align-items: center; justify-content: center;
     }
-    .app{ width:min(1100px,100%); height:100%; display:flex; flex-direction:column; }
 
-    /* Top bar */
-    .topbar{ padding:12px 14px; display:flex; align-items:center; justify-content:space-between; }
-    .title{ display:flex; gap:10px; align-items:center; font-weight:800; letter-spacing:.3px }
+    .app{
+      width: min(980px, 100%);
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      padding: 14px;
+    }
+
+    .top{
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px;
+    }
+    .brand{ font-weight: 900; letter-spacing:.3px; display:flex; align-items:center; gap:10px; }
     .pill{ font-size:12px; padding:6px 10px; border-radius:999px; background:#0a1a38; color:var(--muted); border:1px solid #1a2a56; }
-    .coins{ display:flex; gap:8px; align-items:center; background:#0a1a38; border:1px solid #1a2a56; padding:8px 12px; border-radius:12px; }
-    .coins b{font-size:18px}
+    .balance{ background:#0a1a38; border:1px solid #1a2a56; padding:8px 12px; border-radius:12px; display:flex; gap:8px; align-items:center; }
+    .balance b{ font-size:18px; }
 
-    .content{ flex:1; min-height:0; padding:0 14px 80px; }
-    .card{ background:linear-gradient(180deg, rgba(20,36,80,.65), rgba(10,18,40,.65)); border:1px solid #1a2a56; border-radius:16px; box-shadow:var(--shadow); padding:16px; }
-    .grid{ display:grid; grid-template-columns:1.2fr .8fr; gap:16px; height:100%; }
-    @media (max-width: 880px){ .grid{ grid-template-columns:1fr; } }
-
-    /* Tabs */
-    .tabs{ position:fixed; left:0; right:0; bottom:0; display:grid; grid-template-columns:1fr 1fr 1fr; background:#0a132b; border-top:1px solid #1a2a56; padding:8px; gap:10px; }
-    .tabbtn{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:8px 6px; border-radius:14px; border:1px solid #1a2a56; color:var(--muted); background:#0a1a38; cursor:pointer; user-select:none; }
-    .tabbtn.active{ color:#fff; box-shadow: inset 0 0 24px rgba(114,255,210,.08); border-color:#2a4a86 }
-    .tabicon{ font-size:18px }
-
-    /* Play */
-    .score{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border-radius:14px; background:rgba(10,20,48,.5); border:1px solid #1a2a56; margin-bottom:12px; }
-    .big{ font-size: clamp(28px, 6.5vw, 46px); font-weight:800 }
-    .muted{ color:var(--muted); font-size:13px }
-    .vflex{ display:flex; flex-direction:column; gap:6px }
-    .tapwrap{ height:100%; display:flex; flex-direction:column; align-items:center; gap:16px }
-    .tap{
-      width:min(420px, 70vmin); aspect-ratio:1/1; border-radius:34px; border:1px solid #1e3470;
-      background:
-        radial-gradient(200px 200px at 70% 25%, rgba(112,182,255,.25), transparent),
-        radial-gradient(400px 400px at 30% 80%, rgba(114,255,210,.15), transparent),
-        linear-gradient(180deg, #1a2d63, #0d1a3b);
-      box-shadow: 0 25px 50px rgba(0,0,0,.35), inset 0 -6px 20px rgba(0,0,0,.35), inset 0 0 60px rgba(114,255,210,.07);
-      display:grid; place-items:center; cursor:pointer; user-select:none; position:relative; transition: transform .06s ease; outline:none; margin:auto;
+    .board{
+      position: relative;
+      border:1px solid #1a2a56; border-radius:18px;
+      background: linear-gradient(180deg, rgba(20,36,80,.5), rgba(10,18,40,.5));
+      box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 40px rgba(114,255,210,.08);
+      overflow: hidden;
+      display: grid; grid-template-rows: auto 1fr;
     }
-    .tap:active{ transform: scale(.98) }
-    .tap .label{ font-size: clamp(20px, 5.5vw, 28px); font-weight:800; opacity:.95; text-align:center }
-    .burst{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
-    .bubble{ position:absolute; font-weight:800; filter: drop-shadow(0 8px 16px rgba(0,0,0,.35)); animation: pop 700ms ease forwards; }
-    @keyframes pop{ 0%{ transform: translateY(0) scale(.7); opacity:0 } 15%{ opacity:1 } 100%{ transform: translateY(-60px) scale(1.1); opacity:0 } }
+    .hud{
+      display:flex; align-items:center; justify-content:space-between; padding:10px 12px; gap:10px; border-bottom:1px solid #1a2a56;
+    }
+    .hud .mult{ font-weight:800; font-size: clamp(22px, 6vw, 34px); }
+    .hud .status{ font-size:13px; color:var(--muted); }
+    .area{ position: relative; }
 
-    /* Shop */
-    .shop .row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border:1px solid #1a2a56; border-radius:12px; background:#0c1a3a7a; }
-    .shop .row + .row{ margin-top:10px }
-    .shop .title{ font-weight:700 } .tiny{ font-size:12px; color:var(--muted) }
-    .shop button{ background: linear-gradient(180deg,#6aa3ff,#4b87ff); border:none; color:#05122c; padding:10px 14px; border-radius:10px; font-weight:800; cursor:pointer; box-shadow: 0 8px 20px rgba(80,140,255,.35); min-width:96px; }
-    .shop button:disabled{ filter: grayscale(1) brightness(.7); cursor:not-allowed }
+    /* самолётик и трек */
+    .plane{ position:absolute; left: 10%; bottom: 14%; transform: translate(-50%, 50%); font-size: clamp(24px, 8vw, 40px); }
+    .trail{ position:absolute; left:0; bottom:0; width:2px; background:linear-gradient(180deg, #72ffd2, transparent); opacity:.85 }
 
-    /* Quests */
-    .qcard{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border:1px solid #1a2a56; border-radius:12px; background:#0c1a3a7a; }
-    .qcard + .qcard{ margin-top:10px }
-    .progress{ width:140px; height:8px; background:#0a1a38; border:1px solid #1a2a56; border-radius:999px; position:relative; overflow:hidden }
-    .bar{ position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg, #72ffd2, #6aa3ff) }
+    /* панель ставок */
+    .panel{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
+      border:1px solid #1a2a56; border-radius:14px; background:#0a1a38; padding:10px;
+    }
+    .field{
+      display:flex; align-items:center; gap:8px; background:#0b1b3d; border:1px solid #1a2a56; padding:8px 10px; border-radius:10px;
+    }
+    .field input{
+      width:110px; background:transparent; border:none; outline:none; color:#fff; font-size:16px;
+    }
+    .btn{
+      padding:10px 14px; border:none; border-radius:12px; font-weight:800; cursor:pointer;
+      box-shadow: 0 8px 18px rgba(0,0,0,.25);
+    }
+    .primary{ background:linear-gradient(180deg,#6aa3ff,#4b87ff); color:#05122c; }
+    .danger{ background:linear-gradient(180deg,#ff869e,#ff6a89); color:#2b0511; }
+    .ghost{ background:transparent; border:1px solid #1a2a56; color:var(--muted); }
 
-    /* Leaderboard */
-    .lbrow{ display:grid; grid-template-columns: 32px 1fr auto; gap:12px; align-items:center; padding:10px 12px; border:1px solid #1a2a56; border-radius:12px; background:#0c1a3a7a; }
-    .lbrow + .lbrow{ margin-top:10px }
-    .avatar{ width:32px; height:32px; border-radius:50%; background:#21356e; display:grid; place-items:center; font-weight:800 }
+    .log{ font-size:13px; color:var(--muted); max-height: 86px; overflow:auto; padding-right:6px; }
+    .log b.win{ color: var(--ok) } .log b.lose{ color: var(--bad) }
 
-    /* Toast */
-    .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:#0b1a3a; border:1px solid #1a2a56; color:#fff; padding:10px 14px; border-radius:12px; box-shadow:var(--shadow); opacity:0; transition: opacity .2s, transform .2s; z-index:50; pointer-events:none; }
+    .toast{
+      position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px);
+      background:#0b1a3a; border:1px solid #1a2a56; padding:10px 14px; border-radius:12px;
+      opacity:0; transition: opacity .2s, transform .2s; pointer-events:none;
+    }
     .toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
   </style>
 </head>
 <body>
   <div class="app">
-    <!-- TOP -->
-    <div class="topbar">
-      <div class="title">🥊 <span>Tap Fight Club</span> <span class="pill" id="saveStatus">авто-сохранение</span></div>
-      <div class="coins">💰 <b id="coins">0</b></div>
+    <!-- ШАПКА -->
+    <div class="top">
+      <div class="brand">✈️ <span>Crash Mini</span> <span class="pill">виртуальные монеты</span></div>
+      <div class="balance">Баланс: <b id="balance">1 000</b> 💰</div>
     </div>
 
-    <!-- CONTENT: PLAY -->
-    <div class="content" id="tab-play" role="tabpanel">
-      <div class="grid">
-        <!-- LEFT -->
-        <div class="card" style="display:flex; flex-direction:column">
-          <div class="score">
-            <div class="vflex"><div class="muted">очки</div><div class="big" id="score">0</div></div>
-            <div class="vflex"><div class="muted">за тап</div><div class="big" id="perTap">+1</div></div>
-            <div class="vflex"><div class="muted">в сек.</div><div class="big" id="perSec">0</div></div>
-            <div class="vflex"><div class="muted">комбо</div><div class="big" id="combo">x1.0</div></div>
-          </div>
-
-          <div class="tapwrap">
-            <button class="tap" id="tapBtn" aria-label="Жми!">
-              <div class="label">ЖМИ!<div class="muted" style="font-size:12px">держи темп для комбо</div></div>
-              <div class="burst" id="burst"></div>
-            </button>
-
-            <div class="card" style="width:100%; max-width:680px">
-              <div class="shop" id="shop"></div>
-            </div>
-          </div>
+    <!-- ИГРОВОЕ ПОЛЕ -->
+    <div class="board" id="board">
+      <div class="hud">
+        <div>
+          <div class="status" id="status">Ожидание ставки…</div>
+          <div class="status">Коэффициент краша скрыт</div>
         </div>
-
-        <!-- RIGHT -->
-        <div class="card">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
-            <div style="font-weight:800">Профиль</div>
-            <button class="pill" id="resetBtn" title="Сбросить прогресс">Сброс</button>
-          </div>
-          <div class="vflex">
-            <div class="qcard">
-              <div class="vflex"><div class="muted">ник</div><div><b id="playerName">гость</b></div></div>
-              <button class="tabbtn" id="editName" style="grid-template-columns:unset;padding:8px 12px">✏️ Переименовать</button>
-            </div>
-            <div class="qcard" id="onlineBox" style="display:none">
-              <div class="vflex"><div class="muted">сейчас онлайн</div><div><b id="online">—</b></div></div>
-              <div class="pill" id="netState">●</div>
-            </div>
-            <div class="qcard">
-              <div class="vflex"><div class="muted">уровень</div><div><b id="level">1</b></div></div>
-              <div class="vflex"><div class="muted">апгрейды</div><div><b id="upgCount">0</b></div></div>
-            </div>
-          </div>
-        </div>
+        <div class="mult" id="mult">x1.00</div>
+      </div>
+      <div class="area" id="area">
+        <div class="plane" id="plane">🛩️</div>
+        <!-- хвост будет рисоваться JS элементами .trail -->
       </div>
     </div>
 
-    <!-- QUESTS -->
-    <div class="content" id="tab-quests" role="tabpanel" hidden>
-      <div class="card">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
-          <div style="font-weight:800; font-size:18px">Ежедневные задания</div>
-          <div class="pill">сброс: <b id="resetAt">00:00</b></div>
+    <!-- ПАНЕЛЬ УПРАВЛЕНИЯ -->
+    <div class="panel">
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <div class="field">
+          <span>Ставка 💰</span>
+          <input id="bet" type="number" min="1" step="1" value="10" />
+          <button class="ghost" id="bet25">+25</button>
+          <button class="ghost" id="bet100">+100</button>
+          <button class="ghost" id="betMax">MAX</button>
         </div>
-        <div id="quests"></div>
+        <div class="field">
+          <span>Авто-кэшаут</span>
+          <input id="autoCash" type="number" min="1.01" step="0.01" value="—" placeholder="—" />
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px">
+        <button class="btn primary" id="startBtn">СТАВКА / СТАРТ</button>
+        <button class="btn danger" id="cashBtn" disabled>ЗАБРАТЬ</button>
       </div>
     </div>
 
-    <!-- LEADERBOARD -->
-    <div class="content" id="tab-lb" role="tabpanel" hidden>
-      <div class="card">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
-          <div style="font-weight:800; font-size:18px">Лидерборд</div>
-          <button class="tabbtn" id="syncLB" style="grid-template-columns:unset;padding:8px 12px">↻ Обновить</button>
-        </div>
-        <div id="lb"></div>
-        <div class="muted" style="margin-top:10px">* сейчас локальный рейтинг (твои очки + боты). Готов подключить сервер — скажи.</div>
-      </div>
-    </div>
-
-    <!-- TABS -->
-    <nav class="tabs" role="tablist">
-      <button class="tabbtn active" data-tab="play"><div class="tabicon">🎮</div>Игра</button>
-      <button class="tabbtn" data-tab="quests"><div class="tabicon">📋</div>Задания</button>
-      <button class="tabbtn" data-tab="lb"><div class="tabicon">🏆</div>Лидерборд</button>
-    </nav>
+    <div class="log" id="log"></div>
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <!-- Ably (опционально для онлайна) -->
-  <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
-
   <script>
-    /* ===== Fullscreen & 100vh fix ===== */
-    function setVH(){ document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px'); }
+    // ======= Полноэкранный режим и фикс 100vh =======
+    function setVH(){ document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01) + 'px'); }
     setVH(); addEventListener('resize', setVH); addEventListener('orientationchange', setVH); setTimeout(setVH, 50);
 
-    function expandTelegram(){
+    function tgExpand(){
       try{
         if(window.Telegram?.WebApp){
-          Telegram.WebApp.ready?.();
-          Telegram.WebApp.expand?.();
-          Telegram.WebApp.disableVerticalSwipes?.();
-          Telegram.WebApp.setHeaderColor?.('secondary_bg_color');
-          Telegram.WebApp.setBackgroundColor?.('#0b1226');
+          Telegram.WebApp.ready?.(); Telegram.WebApp.expand?.(); Telegram.WebApp.disableVerticalSwipes?.();
+          Telegram.WebApp.setHeaderColor?.('secondary_bg_color'); Telegram.WebApp.setBackgroundColor?.('#0b1226');
         }
       }catch(e){}
     }
-    expandTelegram(); document.addEventListener('DOMContentLoaded', expandTelegram);
+    tgExpand(); document.addEventListener('DOMContentLoaded', tgExpand);
 
-    // Нативный fullscreen в обычном браузере при первом действии
+    // Нативный fullscreen в браузере по первому действию
     let fsTried=false;
-    function tryFullscreenOnce(){
-      if(fsTried) return; fsTried=true;
+    function tryFS(){ if(fsTried) return; fsTried=true;
       const el=document.documentElement;
       if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
       else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
     }
-    document.addEventListener('click', tryFullscreenOnce, { once:true, capture:true });
-    document.addEventListener('touchend', tryFullscreenOnce, { once:true, capture:true });
+    document.addEventListener('click', tryFS, { once:true, capture:true });
+    document.addEventListener('touchend', tryFS, { once:true, capture:true });
 
-    /* ===== State ===== */
-    const state = {
-      name:'гость', uid: 'u-'+Math.random().toString(16).slice(2),
-      score:0, coins:0,
-      basePerTap:1, tapMultiplier:1, combo:1, maxCombo:5, comboDecayMs:1800, lastTapAt:0,
-      perSec:0, level:1, sound:false, autoClickers:0,
-      upgrades:{tapPlus:0,mult:0,autoclick:0,comboCap:0},
-      lastDaily:null, quests:{}, leaderboard:[]
+    // ======= ЛОГИКА ИГРЫ (виртуальные монеты, МОШНЫЙ БАЙАС В ПРОИГРЫШ) =======
+    const elBalance = document.getElementById('balance');
+    const elBet = document.getElementById('bet');
+    const elAutoCash = document.getElementById('autoCash');
+    const elStart = document.getElementById('startBtn');
+    const elCash = document.getElementById('cashBtn');
+    const elMult = document.getElementById('mult');
+    const elStatus = document.getElementById('status');
+    const elArea = document.getElementById('area');
+    const elPlane = document.getElementById('plane');
+    const elLog = document.getElementById('log');
+    const elToast = document.getElementById('toast');
+
+    // балансы в localStorage (виртуальные)
+    let balance = +(localStorage.getItem('crash-balance') || 1000);
+    updateBalance();
+
+    // Кнопки изменения ставки
+    document.getElementById('bet25').onclick = ()=> addBet(25);
+    document.getElementById('bet100').onclick = ()=> addBet(100);
+    document.getElementById('betMax').onclick = ()=>{
+      elBet.value = Math.max(1, Math.floor(balance));
     };
 
-    /* ===== Elements ===== */
-    const $=s=>document.querySelector(s);
-    const elScore=$('#score'), elPerTap=$('#perTap'), elPerSec=$('#perSec'), elCombo=$('#combo');
-    const elLevel=$('#level'), elUpgCount=$('#upgCount'), elCoins=$('#coins'), elPlayerName=$('#playerName');
-    const elTap=$('#tapBtn'), elBurst=$('#burst'), elShop=$('#shop'), elToast=$('#toast');
-    const elQuests=$('#quests'), elResetAt=$('#resetAt'), elLB=$('#lb');
-    const elOnline=$('#online'), elOnlineBox=$('#onlineBox'), elNetState=$('#netState');
-
-    /* ===== Save/Load ===== */
-    function save(){ localStorage.setItem('tfc-save', JSON.stringify(state)); flashSave(); }
-    function load(){
-      try{ const raw=localStorage.getItem('tfc-save'); if(!raw) return;
-        const prev=JSON.parse(raw); Object.assign(state,prev); if(!state.uid) state.uid='u-'+Math.random().toString(16).slice(2);
-      }catch(e){}
+    function addBet(n){
+      const v = Math.max(0, +elBet.value||0) + n;
+      elBet.value = v;
     }
-    function flashSave(){ $('#saveStatus').textContent='сохранено ✔'; setTimeout(()=>$('#saveStatus').textContent='авто-сохранение',1000); }
-    let saveCooldown=false; function autoSaveMaybe(){ if(saveCooldown) return; saveCooldown=true; setTimeout(()=>{ save(); saveCooldown=false; },700); }
-    function autoSaveNow(){ save(); }
-
-    /* ===== Utils ===== */
-    const fmt=n=>Math.floor(n).toLocaleString('ru-RU');
-    const todayKey=()=>new Date().toISOString().slice(0,10);
-
-    /* ===== Game Core ===== */
-    function perTapNow(){ return state.basePerTap*state.tapMultiplier*state.combo; }
-    function recomputePerSec(){ state.perSec = state.autoClickers * (state.basePerTap * 0.5); }
-    function render(){
-      elScore.textContent=fmt(state.score);
-      elPerTap.textContent='+'+fmt(perTapNow());
-      elPerSec.textContent=fmt(state.perSec);
-      elCombo.textContent='x'+state.combo.toFixed(1);
-      elLevel.textContent=state.level;
-      elUpgCount.textContent=Object.values(state.upgrades).reduce((a,b)=>a+b,0);
-      elCoins.textContent=fmt(state.coins);
-      elPlayerName.textContent=state.name;
-      renderShop(); renderQuests(); renderLeaderboard();
+    function updateBalance(){
+      elBalance.textContent = balance.toLocaleString('ru-RU');
+      localStorage.setItem('crash-balance', balance);
     }
-    function levelUpIfNeeded(){ const need=Math.pow(10,state.level)*120; if(state.score>=need){ state.level++; toast(`Новый уровень ${state.level}!`,1600); } }
-    function addBubble(text,color){
-      const b=document.createElement('div'); b.className='bubble'; b.textContent=text;
-      b.style.left=(40+Math.random()*40)+'%'; b.style.top=(40+Math.random()*20)+'%';
-      b.style.color=color||'#cfe4ff'; b.style.fontSize=(16+Math.random()*10)+'px';
-      elBurst.appendChild(b); setTimeout(()=>b.remove(),800);
+    function toast(msg, ms=1200){
+      elToast.textContent = msg; elToast.classList.add('show');
+      clearTimeout(toast._t); toast._t = setTimeout(()=> elToast.classList.remove('show'), ms);
     }
-    function tap(){
-      const now=Date.now(), dt=now-state.lastTapAt; state.lastTapAt=now;
-      state.combo = dt<state.comboDecayMs ? Math.min(state.combo+0.12, state.maxCombo) : 1;
-      const add=perTapNow();
-      state.score+=add; state.coins+=Math.max(1,Math.floor(add/10));
-      addBubble('+'+fmt(add));
-      levelUpIfNeeded(); tickQuest('taps',1); tickQuest('earn',add);
-      autoSaveMaybe(); render();
-    }
-    elTap.addEventListener('click', tap);
-    elTap.addEventListener('keydown', e=>{ if(e.code==='Space'||e.code==='Enter') tap(); });
-    setInterval(()=>{ if(!state.lastTapAt) return;
-      if(Date.now()-state.lastTapAt>state.comboDecayMs && state.combo>1){ state.combo=Math.max(1,+(state.combo-0.1).toFixed(1)); elCombo.textContent='x'+state.combo.toFixed(1); }
-    },150);
-    setInterval(()=>{ if(state.perSec>0){ state.score+=state.perSec; state.coins+=Math.max(1,Math.floor(state.perSec/10));
-      addBubble('+'+fmt(state.perSec),'#72ffd2'); levelUpIfNeeded(); tickQuest('earn',state.perSec); autoSaveMaybe(); render(); } },1000);
-
-    /* ===== Shop ===== */
-    const shopDefs=[
-      {key:'tapPlus', title:'Сильнее удар (+1 за тап)', desc:'Увеличивает базовую силу', baseCost:20,  grow:1.25, apply:()=>{state.basePerTap+=1;}},
-      {key:'mult',    title:'Множитель (x1.15)',        desc:'Множит очки за тап',       baseCost:120, grow:1.6,  apply:()=>{state.tapMultiplier*=1.15;}},
-      {key:'autoclick',title:'Автокликер (+1/s)',       desc:'Пассивный доход',          baseCost:180, grow:1.55, apply:()=>{state.autoClickers+=1;recomputePerSec();}},
-      {key:'comboCap', title:'Комбо-предел (+1)',       desc:'Максимум комбо ↑',         baseCost:220, grow:1.7,  apply:()=>{state.maxCombo+=1;}},
-    ];
-    const price=(d,lvl)=>Math.floor(d.baseCost*Math.pow(d.grow,lvl||0));
-    function renderShop(){
-      elShop.innerHTML='';
-      shopDefs.forEach(def=>{
-        const lvl=state.upgrades[def.key]||0, cost=price(def,lvl);
-        const row=document.createElement('div'); row.className='row';
-        const left=document.createElement('div'); left.innerHTML=`<div class="title">${def.title}</div><div class="tiny">${def.desc}</div><div class="tiny">уровень: <b>${lvl}</b></div>`;
-        const right=document.createElement('div'); const btn=document.createElement('button'); btn.textContent=`Купить — ${fmt(cost)}💰`; btn.disabled=state.coins<cost;
-        btn.addEventListener('click',()=>{ if(state.coins<cost) return; state.coins-=cost; def.apply(); state.upgrades[def.key]=lvl+1; tickQuest('buy',1); render(); autoSaveNow(); toast(`Куплено: ${def.title}`); });
-        right.appendChild(btn); row.appendChild(left); row.appendChild(right); elShop.appendChild(row);
-      });
+    function logLine(html){
+      const div = document.createElement('div'); div.innerHTML = html;
+      elLog.prepend(div);
+      // ограничим размер лога
+      while(elLog.children.length > 50) elLog.removeChild(elLog.lastChild);
     }
 
-    /* ===== Daily Quests ===== */
-    const dailyDefs=[
-      {key:'taps', title:'Сделай 200 тапов', target:200, reward:200},
-      {key:'earn', title:'Заработай 5,000 очков', target:5000, reward:300},
-      {key:'buy',  title:'Купи 1 апгрейд', target:1, reward:150},
-      {key:'visit',title:'Зайди сегодня в игру', target:1, reward:100},
-    ];
-    function ensureDaily(){
-      const today=todayKey();
-      if(state.lastDaily!==today){
-        state.lastDaily=today; state.quests={}; dailyDefs.forEach(q=>state.quests[q.key]={done:false,val:0}); state.quests.visit.val=1;
+    // Состояние раунда
+    let running = false;
+    let crashed = false;
+    let t0 = 0;
+    let raf = null;
+    let crashAt = 1.0; // коэффициент, на котором произойдёт краш
+    let currentMult = 1.0;
+    let betPlaced = 0;
+    let cashoutPaid = false;
+
+    // Генератор "очень злого" распределения — шанс выигрыша минимальный.
+    // Идея: 35% — мгновенный/ранний краш [1.00..1.05]; 50% — ранний краш [1.00..1.40] по кубической кривой; 15% — средний [1.4..3.0].
+    function drawCrashMultiplier(){
+      const r = Math.random();
+      if (r < 0.35) {
+        // совсем ранний
+        return +(1.00 + Math.random()*0.05).toFixed(2);
+      } else if (r < 0.85) {
+        // кривая с сильным перекосом к низу
+        const u = Math.random() ** 3; // много низких значений
+        return +(1.01 + u * 0.39).toFixed(2); // [1.01..1.40]
+      } else {
+        // редкая удача
+        const u = Math.random() ** 2; // всё ещё смещено вниз
+        return +(1.4 + u * 1.6).toFixed(2); // [1.4..3.0]
       }
     }
-    function tickQuest(key,inc){
-      ensureDaily(); const q=state.quests[key]; if(!q||q.done) return;
-      q.val+=inc; const def=dailyDefs.find(d=>d.key===key);
-      if(q.val>=def.target){ q.done=true; state.coins+=def.reward; toast(`Задание: «${def.title}» — выполнено! +${def.reward}💰`); }
-      renderQuests(); autoSaveMaybe();
-    }
-    function renderQuests(){
-      ensureDaily(); elQuests.innerHTML='';
-      const now=new Date(); const midnight=new Date(now); midnight.setHours(24,0,0,0);
-      const left=midnight-now; const hh=Math.floor(left/3600000), mm=Math.floor((left%3600000)/60000);
-      elResetAt.textContent=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-      dailyDefs.forEach(def=>{
-        const q=state.quests[def.key]||{val:0,done:false}; const pct=Math.min(100,Math.floor((q.val/def.target)*100));
-        const row=document.createElement('div'); row.className='qcard';
-        const leftCol=document.createElement('div'); leftCol.innerHTML=`
-          <div><b>${def.title}</b></div>
-          <div class="tiny">награда: +${def.reward}💰</div>
-          <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
-          <div class="tiny">${Math.min(q.val,def.target)} / ${def.target}</div>`;
-        const rightCol=document.createElement('div'); const btn=document.createElement('button'); btn.className='tabbtn'; btn.style.padding='8px 12px';
-        btn.textContent=q.done?'✓ Готово':(pct>=100?'Забрать':'В процессе'); btn.disabled=!(!q.done && pct>=100);
-        btn.addEventListener('click',()=>{ if(q.done||pct<100) return; q.done=true; state.coins+=def.reward; renderQuests(); autoSaveNow(); toast(`+${def.reward}💰`); });
-        rightCol.appendChild(btn); row.appendChild(leftCol); row.appendChild(rightCol); elQuests.appendChild(row);
-      });
+
+    // Профиль роста коэффициента (плавный рост, ускорение со временем)
+    function multAt(timeSec){
+      // экспоненциальный рост с мягким стартом
+      const k = 0.55; // скорость
+      const m = Math.max(1.0, Math.exp(k * timeSec) / Math.E + 1); // ~ от 1.0 вверх
+      return m;
     }
 
-    /* ===== Leaderboard (local) ===== */
-    function seedBotsIfEmpty(){ if(!state.leaderboard||state.leaderboard.length===0){ state.leaderboard=[
-      {uid:'bot1',name:'NeoHam',score:120000},{uid:'bot2',name:'Foxy',score:78000},{uid:'bot3',name:'ByteCat',score:54000},{uid:'bot4',name:'Sakura',score:31000},{uid:'bot5',name:'Rider',score:18000},
-    ];}}
-    function upsertSelfToLB(){
-      const me={uid:state.uid,name:state.name,score:Math.floor(state.score)};
-      const i=state.leaderboard.findIndex(r=>r.uid===state.uid);
-      if(i>=0) state.leaderboard[i]=me; else state.leaderboard.push(me);
-      state.leaderboard.sort((a,b)=>b.score-a.score); state.leaderboard=state.leaderboard.slice(0,50);
-    }
-    function renderLeaderboard(){
-      seedBotsIfEmpty(); upsertSelfToLB(); const el=$('#lb'); el.innerHTML='';
-      state.leaderboard.forEach((row,i)=>{
-        const d=document.createElement('div'); d.className='lbrow'; const you=row.uid===state.uid;
-        d.innerHTML=`<div>${i+1}</div>
-          <div style="display:flex; align-items:center; gap:10px">
-            <div class="avatar">${(row.name||'U')[0].toUpperCase()}</div>
-            <div><div><b>${row.name}${you?' (ты)':''}</b></div><div class="tiny">${you?'ID: '+state.uid:''}</div></div>
-          </div>
-          <div><b>${fmt(row.score)}</b></div>`;
-        el.appendChild(d);
-      });
+    function resetRoundVisual(){
+      // сброс самолёта и хвостов
+      currentMult = 1.0;
+      elMult.textContent = 'x1.00';
+      elStatus.textContent = 'Ожидание ставки…';
+      crashed = false; cashoutPaid = false; betPlaced = 0;
+      // очистка хвоста
+      [...elArea.querySelectorAll('.trail')].forEach(n=>n.remove());
+      // вернуть самолёт вниз/влево
+      elPlane.style.left = '10%';
+      elPlane.style.bottom = '14%';
+      elPlane.textContent = '🛩️';
+      elCash.disabled = true;
+      elStart.disabled = false;
     }
 
-    /* ===== Tabs ===== */
-    document.querySelectorAll('.tabbtn[data-tab]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        document.querySelectorAll('.tabbtn[data-tab]').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        const tab=btn.dataset.tab;
-        document.querySelectorAll('[role="tabpanel"]').forEach(p=>p.hidden=true);
-        document.getElementById('tab-'+tab).hidden=false;
-      });
+    function startRound(){
+      if (running) return;
+      const bet = Math.floor(+elBet.value || 0);
+      if (bet <= 0) { toast('Укажи ставку'); return; }
+      if (bet > balance) { toast('Недостаточно монет'); return; }
+
+      // списываем ставку
+      balance -= bet; updateBalance();
+      betPlaced = bet;
+
+      // подготавливаем раунд
+      crashAt = drawCrashMultiplier();
+      running = true; crashed = false; cashoutPaid = false;
+      elStart.disabled = true; elCash.disabled = false;
+      elStatus.textContent = 'Взлёт… (коэф. краша скрыт)';
+      t0 = performance.now();
+      tick();
+    }
+
+    function cashOut(){
+      if (!running || crashed || cashoutPaid || betPlaced<=0) return;
+      const payout = Math.floor(betPlaced * currentMult);
+      balance += payout; updateBalance();
+      cashoutPaid = true; running = false;
+      cancelAnimationFrame(raf);
+      elStatus.textContent = 'Забрано!';
+      elCash.disabled = true;
+      elStart.disabled = false;
+      logLine(`Вывод: <b class="win">+${payout.toLocaleString('ru-RU')}💰</b> при x${currentMult.toFixed(2)} (ставка ${betPlaced}💰)`);
+      toast('Забрал! ✅');
+    }
+
+    // Основной цикл анимации
+    function tick(){
+      const t = (performance.now() - t0) / 1000;
+      currentMult = multAt(t);
+      // ограничим до сотых
+      const shown = Math.max(1.0, Math.floor(currentMult*100)/100);
+      elMult.textContent = 'x' + shown.toFixed(2);
+
+      // движение самолёта по диагонали
+      const leftPct = 10 + Math.min(80, t*22);   // вправо
+      const bottomPct = 14 + Math.min(72, t*12); // вверх
+      elPlane.style.left = leftPct + '%';
+      elPlane.style.bottom = bottomPct + '%';
+
+      // хвост
+      const seg = document.createElement('div');
+      seg.className = 'trail';
+      seg.style.left = `calc(${leftPct}% - 1px)`;
+      seg.style.height = Math.max(6, 1+t*12) + 'px';
+      seg.style.bottom = `calc(${bottomPct}% - ${Math.max(6, 1+t*12)}px)`;
+      elArea.appendChild(seg);
+      // удаляем старые
+      setTimeout(()=> seg.remove(), 2000);
+
+      // автокэшаут
+      const ac = parseFloat(elAutoCash.value);
+      if (!isNaN(ac) && ac>=1.01 && !crashed && !cashoutPaid && shown >= ac){
+        cashOut();
+        return;
+      }
+
+      // проверка на краш
+      if (shown >= crashAt && !crashed){
+        crashed = true; running = false;
+        elPlane.textContent = '💥';
+        elStatus.textContent = 'КРАШ!';
+        elCash.disabled = true; elStart.disabled = false;
+        cancelAnimationFrame(raf);
+
+        // если не успел забрать — проигрыш ставки
+        if (!cashoutPaid && betPlaced>0){
+          logLine(`Краш x${crashAt.toFixed(2)} — <b class="lose">-${betPlaced.toLocaleString('ru-RU')}💰</b>`);
+          toast('Проигрыш 💥');
+        }
+        return;
+      }
+
+      if (running) raf = requestAnimationFrame(tick);
+    }
+
+    // биндинги
+    elStart.onclick = startRound;
+    elCash.onclick = cashOut;
+
+    // быстрый ввод авто-кэшаута по тапу на коэффициент
+    elMult.addEventListener('click', ()=>{
+      elAutoCash.value = (Math.floor(currentMult*100)/100).toFixed(2);
+      toast('Авто-кэшаут установлен');
     });
-    $('#syncLB').addEventListener('click', ()=>{ renderLeaderboard(); toast('Лидерборд обновлён'); });
 
-    /* ===== Name / Reset ===== */
-    $('#editName').addEventListener('click', ()=>{
-      const v=prompt('Твой ник:', state.name||''); if(!v) return;
-      state.name=v.toString().slice(0,20)||'гость'; render(); autoSaveNow();
-    });
-    $('#resetBtn').addEventListener('click', ()=>{
-      if(!confirm('Сбросить прогресс?')) return;
-      localStorage.removeItem('tfc-save'); location.reload();
+    // сброс раунда после завершения (по клику на поле)
+    document.getElementById('board').addEventListener('click', ()=>{
+      if (!running && (crashed || cashoutPaid || betPlaced===0)){
+        resetRoundVisual();
+      }
     });
 
-    /* ===== Toast ===== */
-    let toastT; function toast(msg,ms=1200){ elToast.textContent=msg; elToast.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>elToast.classList.remove('show'),ms); }
-
-    /* ===== Online (Ably, optional) ===== */
-    (function(){
-      const ABLY_KEY='YOUR_ABLY_KEY_HERE'; // подставь ключ — появится блок «онлайн»
-      if(!ABLY_KEY || ABLY_KEY.includes('YOUR_ABLY_KEY_HERE')){ elOnlineBox.style.display='none'; return; }
-      try{
-        const ably=new Ably.Realtime({key:ABLY_KEY}); const ch=ably.channels.get('tfc-online'); elOnlineBox.style.display='block';
-        elNetState.textContent='● offline';
-        ably.connection.on('connected',()=>{ elNetState.textContent='● online'; elNetState.className='pill'; });
-        ch.presence.enter({id:state.uid},()=>{});
-        const refresh=()=>ch.presence.get((err,m)=>{ if(!err&&m){ elOnline.textContent=m.length; }});
-        refresh(); ch.presence.subscribe(['enter','leave','update'],refresh);
-        addEventListener('beforeunload',()=>{ try{ch.presence.leave();}catch(e){} });
-        addEventListener('pagehide',()=>{ try{ch.presence.leave();}catch(e){} });
-      }catch(e){ elOnlineBox.style.display='none'; }
-    })();
-
-    /* ===== Boot ===== */
-    function tryGetTGName(){
-      try{
-        const u=window.Telegram?.WebApp?.initDataUnsafe?.user;
-        if(u){ state.name = u.username || u.first_name || 'игрок'; }
-        if(window.Telegram?.WebApp){ Telegram.WebApp.expand?.(); }
-      }catch(e){}
-    }
-    load(); tryGetTGName();
-    // ежедневки
-    (function ensureDailyInit(){ const today=todayKey(); if(state.lastDaily!==today){ state.lastDaily=today; state.quests={}; const defs=['taps','earn','buy','visit']; defs.forEach(k=>state.quests[k]={done:false,val:0}); state.quests.visit.val=1; }})();
-    // рассчёты и рендер
-    (function init(){ recomputePerSec(); render(); })();
-
-    // combo decay визуальный апдейт
-    setInterval(()=>{ /* no-op, уже есть таймеры */ }, 1000);
-
-    // share (опционально можно добавить кнопку)
+    // начальный вид
+    resetRoundVisual();
   </script>
 </body>
 </html>
