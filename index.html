@@ -1,1 +1,533 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<title>⭐ Tetris Club</title>
+<meta name="theme-color" content="#0b1226" />
+<style>
+  :root{ --vh:1vh; --bg:#0b1226; --bg2:#0f1f4a; --text:#e8f0ff; --muted:#a9b8ff; --line:#1a2a56; --accent:#6aa3ff; --good:#72ffa6; --warn:#ffd36a; }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    height:calc(var(--vh)*100);
+    overflow:hidden;
+    background:
+      radial-gradient(1200px 800px at 15% 10%, var(--bg2), transparent),
+      radial-gradient(900px 700px at 80% 90%, #102054, transparent),
+      linear-gradient(180deg, var(--bg), var(--bg));
+    color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Noto Sans",Arial;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .app{ width:min(1100px,100%); height:100%; display:grid; grid-template-rows:auto 1fr auto; gap:12px; padding:14px; }
 
+  .top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .brand{ display:flex; gap:10px; align-items:center; font-weight:900; letter-spacing:.3px }
+  .stat{ display:flex; gap:10px; flex-wrap:wrap; }
+  .pill{ font-size:12px; padding:6px 10px; border-radius:999px; background:#0a1a38; color:var(--muted); border:1px solid var(--line); }
+  .pill b{color:#fff}
+
+  .main{ display:grid; grid-template-columns: minmax(260px, 1fr) 360px; gap:12px; height:100%; }
+  @media (max-width: 900px){ .main{ grid-template-columns:1fr; } }
+
+  .board{
+    position:relative;
+    margin:auto;
+    width:min(90vw, 480px);
+    aspect-ratio: 10/20; /* 10x20 */
+    background:#0a1633;
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 40px rgba(114,255,210,.05);
+    overflow:hidden;
+  }
+  canvas{ width:100%; height:100%; display:block; image-rendering: pixelated; }
+
+  .side{
+    display:flex; flex-direction:column; gap:12px; height:100%;
+  }
+  .card{
+    background: linear-gradient(180deg, rgba(20,36,80,.55), rgba(10,18,40,.55));
+    border:1px solid var(--line); border-radius:12px; padding:12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.3);
+  }
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .next{ display:grid; grid-template-columns:repeat(4,18px); grid-auto-rows:18px; gap:2px; padding:8px; background:#0a1a38; border:1px solid var(--line); border-radius:8px; width:max-content }
+  .cell{ width:18px; height:18px; background:#142a5a; border-radius:4px; }
+  .btn{ padding:10px 12px; border:none; border-radius:10px; font-weight:800; cursor:pointer; }
+  .primary{ background:linear-gradient(180deg,#6aa3ff,#4b87ff); color:#05122c; }
+  .ghost{ background:transparent; border:1px solid var(--line); color:var(--muted); }
+  .danger{ background:linear-gradient(180deg,#ff869e,#ff6a89); color:#2b0511; }
+
+  .shop-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--line); border-radius:10px; padding:10px; background:#0b1b3d; }
+  .tiny{ font-size:12px; color:var(--muted) }
+
+  .tabs{ position:fixed; left:0; right:0; bottom:0; display:grid; grid-template-columns:1fr 1fr 1fr; background:#0a132b; border-top:1px solid var(--line); padding:8px; gap:10px; }
+  .tabbtn{ display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 6px; border-radius:12px; border:1px solid var(--line); background:#0a1a38; color:var(--muted); font-weight:700; cursor:pointer; }
+  .tabbtn.active{ color:#fff; border-color:#2a4a86; box-shadow: inset 0 0 24px rgba(114,255,210,.08) }
+  .content{ display:none; }
+  .content.active{ display:block; }
+
+  .lbrow{ display:grid; grid-template-columns: 28px 1fr auto; gap:10px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#0c1a3a7a; }
+  .avatar{ width:28px; height:28px; border-radius:50%; background:#21356e; display:grid; place-items:center; font-weight:800 }
+
+  .toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px); background:#0b1a3a; border:1px solid var(--line); padding:10px 14px; border-radius:12px; opacity:0; transition: opacity .2s, transform .2s; pointer-events:none; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <div class="brand">🧩 <span>Tetris Club</span></div>
+      <div class="stat">
+        <div class="pill">уровень: <b id="level">1</b></div>
+        <div class="pill">очки: <b id="score">0</b></div>
+        <div class="pill">⭐ звёзды: <b id="stars">0</b></div>
+        <div class="pill">медленные заряды: <b id="slowCharges">0</b></div>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- ИГРОВОЕ ПОЛЕ -->
+      <div class="board">
+        <canvas id="game" width="200" height="400"></canvas>
+      </div>
+
+      <!-- ПРАВАЯ ПАНЕЛЬ -->
+      <div class="side">
+        <!-- Контроль -->
+        <div class="card">
+          <div class="row" style="margin-bottom:8px">
+            <div><b>Управление</b></div>
+            <button class="btn ghost" id="pauseBtn">⏸ Пауза</button>
+          </div>
+          <div class="tiny">←/→ — движение, ↑ — поворот, ↓ — ускорение, <b>Space</b> — хард-дроп, <b>P</b> — пауза</div>
+          <div class="row" style="margin-top:10px">
+            <div class="row" style="gap:8px">
+              <div class="tiny">Следующая фигура:</div>
+              <div class="next" id="nextBox"></div>
+            </div>
+            <button class="btn primary" id="slowBtn" disabled>🐢 Замедлить (60с)</button>
+          </div>
+        </div>
+
+        <!-- Магазин -->
+        <div class="card">
+          <div class="row" style="margin-bottom:8px"><div><b>Магазин</b></div></div>
+          <div class="shop-row">
+            <div>
+              <div><b>🐢 Заряд замедления</b></div>
+              <div class="tiny">Понижает скорость падения на 60 секунд</div>
+              <div class="tiny">Цена: <b>30⭐</b></div>
+            </div>
+            <button class="btn primary" id="buySlowBtn">Купить за 30⭐</button>
+          </div>
+        </div>
+
+        <!-- Лидерборд -->
+        <div class="card">
+          <div class="row" style="margin-bottom:8px">
+            <div><b>Лидерборд</b></div>
+            <button class="btn ghost" id="syncLB">↻</button>
+          </div>
+          <div id="lb"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ВКЛАДКИ (на мобиле удобно быстро переключать) -->
+    <div class="tabs">
+      <button class="tabbtn active" data-tab="play">🎮 Игра</button>
+      <button class="tabbtn" data-tab="shop">🛒 Магазин</button>
+      <button class="tabbtn" data-tab="lb">🏆 Лидеры</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  // ======= Полный экран и Telegram WebApp =======
+  function setVH(){ document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px'); }
+  setVH(); addEventListener('resize', setVH); addEventListener('orientationchange', setVH); setTimeout(setVH, 50);
+  function tgExpand(){ try{ if(window.Telegram?.WebApp){ Telegram.WebApp.ready?.(); Telegram.WebApp.expand?.(); Telegram.WebApp.disableVerticalSwipes?.(); } }catch(e){} }
+  tgExpand(); document.addEventListener('DOMContentLoaded', tgExpand);
+  // Нативный fullscreen в обычном браузере по первому действию
+  let fsTried=false; function tryFS(){ if(fsTried) return; fsTried=true; const el=document.documentElement; if(el.requestFullscreen) el.requestFullscreen().catch(()=>{}); else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen(); }
+  document.addEventListener('click', tryFS, { once:true, capture:true });
+  document.addEventListener('touchend', tryFS, { once:true, capture:true });
+
+  // ======= Элементы UI =======
+  const $=s=>document.querySelector(s);
+  const elCanvas=$('#game'), ctx=elCanvas.getContext('2d');
+  const elLevel=$('#level'), elScore=$('#score'), elStars=$('#stars'), elSlowCharges=$('#slowCharges');
+  const elPause=$('#pauseBtn'), elSlow=$('#slowBtn'), elBuySlow=$('#buySlowBtn');
+  const elNext=$('#nextBox'), elLB=$('#lb'), elSyncLB=$('#syncLB'), elToast=$('#toast');
+
+  // ======= Состояние =======
+  const W=10, H=20, CELL=20; // внутренний размер канваса 200x400
+  const COLORS={ I:'#72ffd2', J:'#6aa3ff', L:'#ffd36a', O:'#72ffa6', S:'#ffad6a', T:'#e6a8ff', Z:'#ff6a89' };
+  const SHAPES={
+    I:[[1,1,1,1]],
+    J:[[1,0,0],[1,1,1]],
+    L:[[0,0,1],[1,1,1]],
+    O:[[1,1],[1,1]],
+    S:[[0,1,1],[1,1,0]],
+    T:[[0,1,0],[1,1,1]],
+    Z:[[1,1,0],[0,1,1]],
+  };
+  const PIECES=Object.keys(SHAPES);
+
+  const state = {
+    grid: createGrid(W,H),
+    cur: null, // {shape, x,y, mtx, color}
+    next: randPiece(),
+    level: +(localStorage.getItem('tetris-level')||1),
+    score: +(localStorage.getItem('tetris-score')||0),
+    stars: +(localStorage.getItem('tetris-stars')||0),
+    slowCharges: +(localStorage.getItem('tetris-slow')||0),
+    hi: +(localStorage.getItem('tetris-hi')||0),
+    uid: localStorage.getItem('tetris-uid') || ('u-'+Math.random().toString(16).slice(2)),
+    name: localStorage.getItem('tetris-name') || 'игрок',
+    paused:false,
+    over:false,
+    tickBase: 800,  // базовая задержка в мс
+    tickSlow: 1400, // при замедлении
+    slowActive:false,
+    slowUntil:0,
+    lastFall:0,
+  };
+  // Скорость зависит от уровня (каждый уровень ускоряет)
+  function gravityDelay(){
+    const base = state.slowActive ? state.tickSlow : state.tickBase;
+    const lvFactor = Math.max(0.15, 1 - (state.level-1)*0.08); // каждый уровень -8% времени
+    return Math.floor(base * lvFactor);
+  }
+
+  saveAll(); // чтобы uid/name сохранились
+
+  // ======= Сервисные =======
+  function createGrid(w,h){ return Array.from({length:h},()=>Array(w).fill(null)); }
+  function randPiece(){ const t = PIECES[Math.floor(Math.random()*PIECES.length)]; return {type:t, mtx:copyMtx(SHAPES[t]), color:COLORS[t]}; }
+  function copyMtx(m){ return m.map(r=>r.slice()); }
+  function rotate(mtx){ // вращение по часовой
+    const h=mtx.length, w=mtx[0].length;
+    const out = Array.from({length:w},()=>Array(h).fill(0));
+    for (let y=0;y<h;y++) for(let x=0;x<w;x++) out[x][h-1-y]=mtx[y][x];
+    return out;
+  }
+  function collide(grid, piece){
+    const {x,y,mtx}=piece;
+    for (let j=0;j<mtx.length;j++){
+      for (let i=0;i<mtx[j].length;i++){
+        if (mtx[j][i]){
+          const gx=x+i, gy=y+j;
+          if (gx<0||gx>=W||gy>=H) return true;
+          if (gy>=0 && grid[gy][gx]) return true;
+        }
+      }
+    }
+    return false;
+  }
+  function merge(grid, piece){
+    const {x,y,mtx,color}=piece;
+    for (let j=0;j<mtx.length;j++)
+      for (let i=0;i<mtx[j].length;i++)
+        if (mtx[j][i] && y+j>=0) grid[y+j][x+i] = color;
+  }
+  function clearLines(){
+    let cleared=0;
+    for (let y=H-1;y>=0;){
+      if (state.grid[y].every(c=>c)){
+        state.grid.splice(y,1);
+        state.grid.unshift(Array(W).fill(null));
+        cleared++;
+      } else y--;
+    }
+    if (cleared>0){
+      // очки по классике
+      const table=[0,100,300,500,800];
+      const add = (table[cleared]||1000) * state.level;
+      state.score += add;
+      toast(`+${add} очков (${cleared} линия${cleared>1?'и':''})`);
+      // апдейт UI и hi
+      if (state.score>state.hi) state.hi=state.score;
+      saveAll(); renderUI();
+      // повышение уровня каждые 10 строк? Реалистичнее — по очкам
+      levelUpCheck();
+    }
+  }
+  function levelUpCheck(){
+    // простая шкала: каждые 2000 очков — новый уровень + 3⭐
+    const need = state.level*2000;
+    if (state.score >= need){
+      state.level++;
+      state.stars += 3; // за уровень даём 3 звезды
+      toast(`Уровень ${state.level}! ⭐+3`);
+      saveAll(); renderUI();
+    }
+  }
+  function newPiece(){
+    state.cur = { x: Math.floor(W/2)-2, y:-2, ...state.next };
+    state.next = randPiece();
+    // если коллизия сразу — проигрыш
+    if (collide(state.grid, state.cur)){
+      state.over=true; state.paused=true;
+      toast('Игра окончена');
+      // записать в лидерборд
+      upsertSelfToLB();
+      renderLB();
+    }
+    drawNext();
+  }
+
+  // ======= Рендер =======
+  function draw(){
+    // фон
+    ctx.fillStyle='#0a1633';
+    ctx.fillRect(0,0,elCanvas.width,elCanvas.height);
+
+    // сетка
+    for(let y=0;y<H;y++){
+      for(let x=0;x<W;x++){
+        const c = state.grid[y][x];
+        if (c){
+          drawCell(x,y,c);
+        } else {
+          // слегка видимая сетка
+          ctx.strokeStyle='rgba(26,42,86,.18)';
+          ctx.strokeRect(x*CELL, y*CELL, CELL, CELL);
+        }
+      }
+    }
+
+    // текущая фигура
+    if (state.cur){
+      const {x,y,mtx,color}=state.cur;
+      for(let j=0;j<mtx.length;j++)
+        for(let i=0;i<mtx[j].length;i++)
+          if (mtx[j][i] && y+j>=0) drawCell(x+i, y+j, color);
+    }
+
+    // индикатор замедления
+    if (state.slowActive){
+      const left = Math.max(0, state.slowUntil - performance.now());
+      ctx.fillStyle='rgba(114,255,166,.08)';
+      ctx.fillRect(0,0,elCanvas.width,elCanvas.height);
+      ctx.fillStyle='#72ffa6';
+      ctx.font='bold 12px system-ui';
+      ctx.fillText(`Замедление: ${(left/1000).toFixed(0)}с`, 6, 14);
+      if (left<=0){ state.slowActive=false; elSlow.disabled = state.slowCharges<=0; }
+    }
+  }
+  function drawCell(x,y,color){
+    ctx.fillStyle=color;
+    ctx.fillRect(x*CELL, y*CELL, CELL, CELL);
+    ctx.fillStyle='rgba(255,255,255,.15)';
+    ctx.fillRect(x*CELL, y*CELL, CELL, 4); // блик
+    ctx.strokeStyle='rgba(0,0,0,.35)';
+    ctx.strokeRect(x*CELL, y*CELL, CELL, CELL);
+  }
+  function drawNext(){
+    elNext.innerHTML='';
+    const m = state.next.mtx;
+    const h = m.length, w = m[0].length;
+    for (let y=0;y<4;y++){
+      for (let x=0;x<4;x++){
+        const cell=document.createElement('div'); cell.className='cell';
+        if (y<h && x<w && m[y][x]){ cell.style.background = state.next.color; }
+        elNext.appendChild(cell);
+      }
+    }
+  }
+  function renderUI(){
+    elLevel.textContent=state.level;
+    elScore.textContent=state.score.toLocaleString('ru-RU');
+    elStars.textContent=state.stars;
+    elSlowCharges.textContent=state.slowCharges;
+    elSlow.disabled = state.slowCharges<=0 || state.slowActive;
+  }
+  function toast(msg, ms=1200){
+    elToast.textContent=msg; elToast.classList.add('show');
+    clearTimeout(toast._t); toast._t=setTimeout(()=>elToast.classList.remove('show'),ms);
+  }
+
+  // ======= Игровой цикл =======
+  function step(ts){
+    if (state.paused || state.over) { draw(); requestAnimationFrame(step); return; }
+    if (!state.lastFall) state.lastFall = ts;
+
+    const delay = gravityDelay();
+    if (ts - state.lastFall >= delay){
+      state.lastFall = ts;
+      // пытаемся опустить
+      state.cur.y++;
+      if (collide(state.grid, state.cur)){
+        state.cur.y--;
+        merge(state.grid, state.cur);
+        clearLines();
+        newPiece();
+      }
+    }
+    draw();
+    requestAnimationFrame(step);
+  }
+
+  // ======= Управление =======
+  function move(dx){
+    if (state.paused || state.over) return;
+    state.cur.x += dx;
+    if (collide(state.grid, state.cur)) state.cur.x -= dx;
+  }
+  function rotateCur(){
+    if (state.paused || state.over) return;
+    const prev = state.cur.mtx;
+    state.cur.mtx = rotate(prev);
+    // wall-kick небольшой
+    if (collide(state.grid, state.cur)){
+      state.cur.x++;
+      if (collide(state.grid, state.cur)){
+        state.cur.x-=2;
+        if (collide(state.grid, state.cur)){
+          state.cur.x++;
+          state.cur.mtx = prev; // откат
+        }
+      }
+    }
+  }
+  function softDrop(){
+    if (state.paused || state.over) return;
+    state.cur.y++;
+    if (collide(state.grid, state.cur)) { state.cur.y--; }
+    else { state.score+=1; renderUI(); }
+  }
+  function hardDrop(){
+    if (state.paused || state.over) return;
+    let dist=0;
+    while(true){
+      state.cur.y++; if (collide(state.grid, state.cur)){ state.cur.y--; break; } dist++;
+    }
+    state.score += 2*dist; renderUI();
+    merge(state.grid, state.cur); clearLines(); newPiece(); draw();
+  }
+  function togglePause(){
+    state.paused=!state.paused;
+    elPause.textContent = state.paused? '▶️ Продолжить' : '⏸ Пауза';
+  }
+  addEventListener('keydown', e=>{
+    if (e.code==='ArrowLeft') move(-1);
+    else if (e.code==='ArrowRight') move(1);
+    else if (e.code==='ArrowUp') rotateCur();
+    else if (e.code==='ArrowDown') softDrop();
+    else if (e.code==='Space') { e.preventDefault(); hardDrop(); }
+    else if (e.code==='KeyP') togglePause();
+  });
+  elPause.onclick=togglePause;
+
+  // ======= Замедление =======
+  elSlow.onclick = ()=>{
+    if (state.slowCharges<=0 || state.slowActive) return;
+    state.slowCharges--; state.slowActive=true; state.slowUntil = performance.now()+60000; // 60с
+    toast('Замедление на 60 секунд');
+    saveAll(); renderUI();
+  };
+
+  // ======= Магазин =======
+  elBuySlow.onclick = ()=>{
+    if (state.stars < 30){ toast('Нужно 30⭐'); return; }
+    state.stars -= 30; state.slowCharges++;
+    toast('Куплен 1 заряд замедления 🐢');
+    saveAll(); renderUI();
+  };
+
+  // ======= Лидерборд (локальный с ботами) =======
+  function seedBots(){
+    const bots = [
+      { uid:'b1', name:'NeoHam', score: 18000 },
+      { uid:'b2', name:'Foxy', score: 12400 },
+      { uid:'b3', name:'ByteCat', score: 9300 },
+      { uid:'b4', name:'Sakura', score: 6800 },
+      { uid:'b5', name:'Rider', score: 4700 },
+    ];
+    localStorage.setItem('tetris-bots', JSON.stringify(bots));
+    return bots;
+  }
+  function getLB(){
+    const bots = JSON.parse(localStorage.getItem('tetris-bots')||'null') || seedBots();
+    const me = { uid: state.uid, name: state.name, score: state.hi||state.score };
+    let list = bots.slice();
+    // обновим запись игрока
+    const i = list.findIndex(r=>r.uid===me.uid);
+    if (i>=0) list[i]=me; else list.push(me);
+    list.sort((a,b)=>b.score-a.score);
+    return list.slice(0,20);
+  }
+  function upsertSelfToLB(){
+    const list = getLB();
+    localStorage.setItem('tetris-lb', JSON.stringify(list));
+  }
+  function renderLB(){
+    const list = getLB();
+    elLB.innerHTML='';
+    list.forEach((row,i)=>{
+      const el=document.createElement('div'); el.className='lbrow';
+      const you=row.uid===state.uid;
+      el.innerHTML = `
+        <div>${i+1}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="avatar">${(row.name||'U')[0].toUpperCase()}</div>
+          <div>
+            <div><b>${row.name}${you?' (ты)':''}</b></div>
+            <div class="tiny">${you?('ID: '+state.uid):''}</div>
+          </div>
+        </div>
+        <div><b>${row.score.toLocaleString('ru-RU')}</b></div>`;
+      elLB.appendChild(el);
+    });
+  }
+  elSyncLB.onclick=()=>{ upsertSelfToLB(); renderLB(); toast('Лидерборд обновлён'); };
+
+  // ======= Табы (для узких экранов) =======
+  document.querySelectorAll('.tabbtn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const t=btn.dataset.tab;
+      // показываем часть правой панели
+      document.querySelectorAll('.side .card').forEach((c,idx)=>{
+        c.style.display = (t==='play' && idx===0) || (t==='shop' && idx===1) || (t==='lb' && idx===2) ? 'block' : 'none';
+      });
+    });
+  });
+  // начальная видимость на мобиле
+  (function initTabVisibility(){
+    const cards=document.querySelectorAll('.side .card');
+    cards.forEach((c,i)=> c.style.display = i===0 ? 'block' : (window.innerWidth<900 ? 'none' : 'block'));
+  })();
+
+  // ======= Сохранение =======
+  function saveAll(){
+    localStorage.setItem('tetris-level', state.level);
+    localStorage.setItem('tetris-score', state.score);
+    localStorage.setItem('tetris-stars', state.stars);
+    localStorage.setItem('tetris-slow', state.slowCharges);
+    localStorage.setItem('tetris-hi', state.hi);
+    localStorage.setItem('tetris-uid', state.uid);
+    localStorage.setItem('tetris-name', state.name);
+  }
+
+  // ======= Старт =======
+  function resetGrid(){ state.grid=createGrid(W,H); }
+  function startGame(){
+    resetGrid(); state.over=false; state.paused=false;
+    state.score=0; state.level = Math.max(1, state.level); // продолжаем с текущего уровня
+    state.lastFall=0; state.slowActive=false;
+    newPiece(); renderUI(); draw(); requestAnimationFrame(step);
+  }
+
+  // подготовка
+  drawNext(); renderUI(); renderLB();
+  startGame();
+</script>
+</body>
+</html>
