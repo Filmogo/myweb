@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-<title>⭐ Tetris Club</title>
+<title>⭐ Tetris Club — Mobile</title>
 <meta name="theme-color" content="#0b1226" />
 <style>
   :root{ --vh:1vh; --bg:#0b1226; --bg2:#0f1f4a; --text:#e8f0ff; --muted:#a9b8ff; --line:#1a2a56; --accent:#6aa3ff; --good:#72ffa6; --warn:#ffd36a; }
-  *{box-sizing:border-box}
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
   html,body{height:100%;margin:0}
   body{
     height:calc(var(--vh)*100);
@@ -20,11 +20,12 @@
     font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Noto Sans",Arial;
     display:flex;align-items:center;justify-content:center;
   }
-  .app{ width:min(1100px,100%); height:100%; display:grid; grid-template-rows:auto 1fr auto; gap:12px; padding:14px; }
+
+  .app{ width:min(1100px,100%); height:100%; display:grid; grid-template-rows:auto 1fr auto; gap:12px; padding:12px; }
 
   .top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .brand{ display:flex; gap:10px; align-items:center; font-weight:900; letter-spacing:.3px }
-  .stat{ display:flex; gap:10px; flex-wrap:wrap; }
+  .stat{ display:flex; gap:8px; flex-wrap:wrap; }
   .pill{ font-size:12px; padding:6px 10px; border-radius:999px; background:#0a1a38; color:var(--muted); border:1px solid var(--line); }
   .pill b{color:#fff}
 
@@ -32,21 +33,14 @@
   @media (max-width: 900px){ .main{ grid-template-columns:1fr; } }
 
   .board{
-    position:relative;
-    margin:auto;
-    width:min(90vw, 480px);
-    aspect-ratio: 10/20; /* 10x20 */
-    background:#0a1633;
-    border:1px solid var(--line);
-    border-radius:12px;
+    position:relative; margin:auto; width:min(90vw, 480px); aspect-ratio: 10/20;
+    background:#0a1633; border:1px solid var(--line); border-radius:12px;
     box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 40px rgba(114,255,210,.05);
     overflow:hidden;
   }
-  canvas{ width:100%; height:100%; display:block; image-rendering: pixelated; }
+  canvas{ width:100%; height:100%; display:block; image-rendering: pixelated; touch-action:none; }
 
-  .side{
-    display:flex; flex-direction:column; gap:12px; height:100%;
-  }
+  .side{ display:flex; flex-direction:column; gap:12px; height:100%; }
   .card{
     background: linear-gradient(180deg, rgba(20,36,80,.55), rgba(10,18,40,.55));
     border:1px solid var(--line); border-radius:12px; padding:12px;
@@ -55,10 +49,12 @@
   .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .next{ display:grid; grid-template-columns:repeat(4,18px); grid-auto-rows:18px; gap:2px; padding:8px; background:#0a1a38; border:1px solid var(--line); border-radius:8px; width:max-content }
   .cell{ width:18px; height:18px; background:#142a5a; border-radius:4px; }
+
   .btn{ padding:10px 12px; border:none; border-radius:10px; font-weight:800; cursor:pointer; }
   .primary{ background:linear-gradient(180deg,#6aa3ff,#4b87ff); color:#05122c; }
   .ghost{ background:transparent; border:1px solid var(--line); color:var(--muted); }
   .danger{ background:linear-gradient(180deg,#ff869e,#ff6a89); color:#2b0511; }
+  .ok{ background:linear-gradient(180deg,#76ffb0,#39d681); color:#05301a; }
 
   .shop-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--line); border-radius:10px; padding:10px; background:#0b1b3d; }
   .tiny{ font-size:12px; color:var(--muted) }
@@ -66,11 +62,24 @@
   .tabs{ position:fixed; left:0; right:0; bottom:0; display:grid; grid-template-columns:1fr 1fr 1fr; background:#0a132b; border-top:1px solid var(--line); padding:8px; gap:10px; }
   .tabbtn{ display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 6px; border-radius:12px; border:1px solid var(--line); background:#0a1a38; color:var(--muted); font-weight:700; cursor:pointer; }
   .tabbtn.active{ color:#fff; border-color:#2a4a86; box-shadow: inset 0 0 24px rgba(114,255,210,.08) }
-  .content{ display:none; }
-  .content.active{ display:block; }
 
-  .lbrow{ display:grid; grid-template-columns: 28px 1fr auto; gap:10px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#0c1a3a7a; }
-  .avatar{ width:28px; height:28px; border-radius:50%; background:#21356e; display:grid; place-items:center; font-weight:800 }
+  /* Мобильные кнопки управления */
+  .controls{
+    position:absolute; left:0; right:0; bottom:6px; display:flex; justify-content:space-between; padding:8px;
+    pointer-events:none;
+  }
+  .ctrlgroup{ display:flex; gap:8px; }
+  .ctrlbtn{ pointer-events:auto; background:#0a1a38; border:1px solid var(--line); color:#fff; border-radius:12px; padding:10px 12px; font-weight:900; opacity:.95 }
+  .ctrlbtn:active{ transform:scale(.97) }
+
+  /* Стартовый экран */
+  .overlay{
+    position:absolute; inset:0; display:grid; place-items:center; background:rgba(5,10,25,.6); backdrop-filter: blur(4px);
+  }
+  .modal{
+    background:#0a1a38; border:1px solid var(--line); border-radius:16px; padding:16px; width:min(420px,90vw);
+    text-align:center; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  }
 
   .toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px); background:#0b1a3a; border:1px solid var(--line); padding:10px 14px; border-radius:12px; opacity:0; transition: opacity .2s, transform .2s; pointer-events:none; }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
@@ -84,25 +93,45 @@
         <div class="pill">уровень: <b id="level">1</b></div>
         <div class="pill">очки: <b id="score">0</b></div>
         <div class="pill">⭐ звёзды: <b id="stars">0</b></div>
-        <div class="pill">медленные заряды: <b id="slowCharges">0</b></div>
+        <div class="pill">замедления: <b id="slowCharges">0</b></div>
       </div>
     </div>
 
     <div class="main">
       <!-- ИГРОВОЕ ПОЛЕ -->
-      <div class="board">
+      <div class="board" id="board">
         <canvas id="game" width="200" height="400"></canvas>
+
+        <!-- Стартовое модальное окно -->
+        <div class="overlay" id="startOverlay">
+          <div class="modal">
+            <h3 style="margin:6px 0 10px">Tetris Club</h3>
+            <div class="tiny" style="margin-bottom:10px">Управление: ←/→, ↑ (поворот), ↓, Space (хард-дроп). На телефоне — кнопки и свайпы.</div>
+            <button class="btn ok" id="startBtn">▶️ Старт</button>
+          </div>
+        </div>
+
+        <!-- Экранные кнопки для телефона -->
+        <div class="controls">
+          <div class="ctrlgroup">
+            <button class="ctrlbtn" id="leftBtn">←</button>
+            <button class="ctrlbtn" id="rightBtn">→</button>
+            <button class="ctrlbtn" id="rotateBtn">⤾</button>
+          </div>
+          <div class="ctrlgroup">
+            <button class="ctrlbtn" id="downBtn">↓</button>
+            <button class="ctrlbtn" id="dropBtn">⤓</button>
+            <button class="ctrlbtn" id="pauseBtn">⏸</button>
+          </div>
+        </div>
       </div>
 
       <!-- ПРАВАЯ ПАНЕЛЬ -->
       <div class="side">
         <!-- Контроль -->
         <div class="card">
-          <div class="row" style="margin-bottom:8px">
-            <div><b>Управление</b></div>
-            <button class="btn ghost" id="pauseBtn">⏸ Пауза</button>
-          </div>
-          <div class="tiny">←/→ — движение, ↑ — поворот, ↓ — ускорение, <b>Space</b> — хард-дроп, <b>P</b> — пауза</div>
+          <div class="row" style="margin-bottom:8px"><div><b>Управление</b></div></div>
+          <div class="tiny">←/→ — движение, ↑ — поворот, ↓ — ускорение, Space — хард-дроп, P/⏸ — пауза</div>
           <div class="row" style="margin-top:10px">
             <div class="row" style="gap:8px">
               <div class="tiny">Следующая фигура:</div>
@@ -118,10 +147,17 @@
           <div class="shop-row">
             <div>
               <div><b>🐢 Заряд замедления</b></div>
-              <div class="tiny">Понижает скорость падения на 60 секунд</div>
+              <div class="tiny">Замедляет падение на 60 сек</div>
               <div class="tiny">Цена: <b>30⭐</b></div>
             </div>
             <button class="btn primary" id="buySlowBtn">Купить за 30⭐</button>
+          </div>
+          <div class="shop-row">
+            <div>
+              <div><b>⭐ Купить звёзды</b></div>
+              <div class="tiny">Реальная оплата (Telegram invoice) — звёзды на баланс</div>
+            </div>
+            <button class="btn ok" id="buyStarsBtn">Купить ⭐</button>
           </div>
         </div>
 
@@ -136,7 +172,7 @@
       </div>
     </div>
 
-    <!-- ВКЛАДКИ (на мобиле удобно быстро переключать) -->
+    <!-- ТАБЫ (для узких экранов) -->
     <div class="tabs">
       <button class="tabbtn active" data-tab="play">🎮 Игра</button>
       <button class="tabbtn" data-tab="shop">🛒 Магазин</button>
@@ -147,25 +183,30 @@
   <div class="toast" id="toast"></div>
 
 <script>
-  // ======= Полный экран и Telegram WebApp =======
+  /* ===== Полный экран & Telegram WebApp ===== */
   function setVH(){ document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px'); }
   setVH(); addEventListener('resize', setVH); addEventListener('orientationchange', setVH); setTimeout(setVH, 50);
   function tgExpand(){ try{ if(window.Telegram?.WebApp){ Telegram.WebApp.ready?.(); Telegram.WebApp.expand?.(); Telegram.WebApp.disableVerticalSwipes?.(); } }catch(e){} }
   tgExpand(); document.addEventListener('DOMContentLoaded', tgExpand);
-  // Нативный fullscreen в обычном браузере по первому действию
-  let fsTried=false; function tryFS(){ if(fsTried) return; fsTried=true; const el=document.documentElement; if(el.requestFullscreen) el.requestFullscreen().catch(()=>{}); else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen(); }
-  document.addEventListener('click', tryFS, { once:true, capture:true });
-  document.addEventListener('touchend', tryFS, { once:true, capture:true });
 
-  // ======= Элементы UI =======
+  /* ===== Настройки оплаты (Telegram Invoice) =====
+     Если у тебя готова ссылка на инвойс (создаётся ботом), вставь её ниже.
+     В Telegram приложении кнопка «Купить ⭐» откроет инвойс и при успехе добавит звёзды к балансу.
+  */
+  const INVOICE_URL = ""; // пример: "https://t.me/your_bot?start=invoice_abc123"
+
+  /* ===== Константы и элементы ===== */
   const $=s=>document.querySelector(s);
   const elCanvas=$('#game'), ctx=elCanvas.getContext('2d');
   const elLevel=$('#level'), elScore=$('#score'), elStars=$('#stars'), elSlowCharges=$('#slowCharges');
-  const elPause=$('#pauseBtn'), elSlow=$('#slowBtn'), elBuySlow=$('#buySlowBtn');
   const elNext=$('#nextBox'), elLB=$('#lb'), elSyncLB=$('#syncLB'), elToast=$('#toast');
 
-  // ======= Состояние =======
-  const W=10, H=20, CELL=20; // внутренний размер канваса 200x400
+  const elStartOverlay=$('#startOverlay'), elStartBtn=$('#startBtn');
+  const elLeft=$('#leftBtn'), elRight=$('#rightBtn'), elRotate=$('#rotateBtn'), elDown=$('#downBtn'), elDrop=$('#dropBtn'), elPause=$('#pauseBtn');
+
+  const elSlow=$('#slowBtn'), elBuySlow=$('#buySlowBtn'), elBuyStars=$('#buyStarsBtn');
+
+  const W=10, H=20, CELL=20; // канвас 200x400
   const COLORS={ I:'#72ffd2', J:'#6aa3ff', L:'#ffd36a', O:'#72ffa6', S:'#ffad6a', T:'#e6a8ff', Z:'#ff6a89' };
   const SHAPES={
     I:[[1,1,1,1]],
@@ -178,9 +219,10 @@
   };
   const PIECES=Object.keys(SHAPES);
 
+  /* ===== Состояние ===== */
   const state = {
     grid: createGrid(W,H),
-    cur: null, // {shape, x,y, mtx, color}
+    cur: null,
     next: randPiece(),
     level: +(localStorage.getItem('tetris-level')||1),
     score: +(localStorage.getItem('tetris-score')||0),
@@ -189,42 +231,34 @@
     hi: +(localStorage.getItem('tetris-hi')||0),
     uid: localStorage.getItem('tetris-uid') || ('u-'+Math.random().toString(16).slice(2)),
     name: localStorage.getItem('tetris-name') || 'игрок',
-    paused:false,
+    paused:true,
     over:false,
-    tickBase: 800,  // базовая задержка в мс
-    tickSlow: 1400, // при замедлении
+    started:false,
+    tickBase: 800,
+    tickSlow: 1400,
     slowActive:false,
     slowUntil:0,
     lastFall:0,
+    touch:{x:0,y:0,active:false},
   };
-  // Скорость зависит от уровня (каждый уровень ускоряет)
-  function gravityDelay(){
-    const base = state.slowActive ? state.tickSlow : state.tickBase;
-    const lvFactor = Math.max(0.15, 1 - (state.level-1)*0.08); // каждый уровень -8% времени
-    return Math.floor(base * lvFactor);
-  }
+  saveAll();
 
-  saveAll(); // чтобы uid/name сохранились
-
-  // ======= Сервисные =======
+  /* ===== Утилиты ===== */
   function createGrid(w,h){ return Array.from({length:h},()=>Array(w).fill(null)); }
   function randPiece(){ const t = PIECES[Math.floor(Math.random()*PIECES.length)]; return {type:t, mtx:copyMtx(SHAPES[t]), color:COLORS[t]}; }
   function copyMtx(m){ return m.map(r=>r.slice()); }
-  function rotate(mtx){ // вращение по часовой
-    const h=mtx.length, w=mtx[0].length;
-    const out = Array.from({length:w},()=>Array(h).fill(0));
-    for (let y=0;y<h;y++) for(let x=0;x<w;x++) out[x][h-1-y]=mtx[y][x];
-    return out;
-  }
+  function rotate(mtx){ const h=mtx.length, w=mtx[0].length; const out=Array.from({length:w},()=>Array(h).fill(0)); for(let y=0;y<h;y++) for(let x=0;x<w;x++) out[x][h-1-y]=mtx[y][x]; return out; }
+
   function collide(grid, piece){
     const {x,y,mtx}=piece;
     for (let j=0;j<mtx.length;j++){
       for (let i=0;i<mtx[j].length;i++){
-        if (mtx[j][i]){
-          const gx=x+i, gy=y+j;
-          if (gx<0||gx>=W||gy>=H) return true;
-          if (gy>=0 && grid[gy][gx]) return true;
-        }
+        if (!mtx[j][i]) continue;
+        const gx = x+i, gy = y+j;
+        // выход за низ или бока — коллизия
+        if (gx<0 || gx>=W || gy>=H) return true;
+        // верх за экран допускаем, но только если gy>=0 учитываем сетку
+        if (gy>=0 && grid[gy][gx]) return true;
       }
     }
     return false;
@@ -238,106 +272,80 @@
   function clearLines(){
     let cleared=0;
     for (let y=H-1;y>=0;){
-      if (state.grid[y].every(c=>c)){
+      if (state.grid[y].every(Boolean)){
         state.grid.splice(y,1);
         state.grid.unshift(Array(W).fill(null));
         cleared++;
-      } else y--;
+      }else y--;
     }
-    if (cleared>0){
-      // очки по классике
+    if (cleared){
       const table=[0,100,300,500,800];
-      const add = (table[cleared]||1000) * state.level;
-      state.score += add;
-      toast(`+${add} очков (${cleared} линия${cleared>1?'и':''})`);
-      // апдейт UI и hi
+      const add=(table[cleared]||1000)*state.level;
+      state.score+=add;
       if (state.score>state.hi) state.hi=state.score;
       saveAll(); renderUI();
-      // повышение уровня каждые 10 строк? Реалистичнее — по очкам
       levelUpCheck();
     }
   }
   function levelUpCheck(){
-    // простая шкала: каждые 2000 очков — новый уровень + 3⭐
     const need = state.level*2000;
-    if (state.score >= need){
-      state.level++;
-      state.stars += 3; // за уровень даём 3 звезды
-      toast(`Уровень ${state.level}! ⭐+3`);
-      saveAll(); renderUI();
+    if (state.score>=need){
+      state.level++; state.stars+=3; toast(`Уровень ${state.level}! ⭐+3`); saveAll(); renderUI();
     }
   }
   function newPiece(){
     state.cur = { x: Math.floor(W/2)-2, y:-2, ...state.next };
     state.next = randPiece();
-    // если коллизия сразу — проигрыш
+    // Проверка на проигрыш (фигура упирается сразу)
     if (collide(state.grid, state.cur)){
-      state.over=true; state.paused=true;
-      toast('Игра окончена');
-      // записать в лидерборд
-      upsertSelfToLB();
-      renderLB();
+      state.over=true; state.paused=true; state.started=false;
+      upsertSelfToLB(); renderLB();
+      showStart();
     }
     drawNext();
   }
 
-  // ======= Рендер =======
+  /* ===== Рендер ===== */
   function draw(){
-    // фон
     ctx.fillStyle='#0a1633';
     ctx.fillRect(0,0,elCanvas.width,elCanvas.height);
 
-    // сетка
     for(let y=0;y<H;y++){
       for(let x=0;x<W;x++){
-        const c = state.grid[y][x];
-        if (c){
-          drawCell(x,y,c);
-        } else {
-          // слегка видимая сетка
+        const c=state.grid[y][x];
+        if (c) drawCell(x,y,c);
+        else {
           ctx.strokeStyle='rgba(26,42,86,.18)';
-          ctx.strokeRect(x*CELL, y*CELL, CELL, CELL);
+          ctx.strokeRect(x*CELL,y*CELL,CELL,CELL);
         }
       }
     }
-
-    // текущая фигура
     if (state.cur){
       const {x,y,mtx,color}=state.cur;
       for(let j=0;j<mtx.length;j++)
         for(let i=0;i<mtx[j].length;i++)
-          if (mtx[j][i] && y+j>=0) drawCell(x+i, y+j, color);
+          if (mtx[j][i] && y+j>=0) drawCell(x+i,y+j,color);
     }
 
-    // индикатор замедления
     if (state.slowActive){
       const left = Math.max(0, state.slowUntil - performance.now());
-      ctx.fillStyle='rgba(114,255,166,.08)';
-      ctx.fillRect(0,0,elCanvas.width,elCanvas.height);
-      ctx.fillStyle='#72ffa6';
-      ctx.font='bold 12px system-ui';
-      ctx.fillText(`Замедление: ${(left/1000).toFixed(0)}с`, 6, 14);
+      ctx.fillStyle='rgba(114,255,166,.08)'; ctx.fillRect(0,0,elCanvas.width,elCanvas.height);
+      ctx.fillStyle='#72ffa6'; ctx.font='bold 12px system-ui'; ctx.fillText(`Замедление: ${(left/1000).toFixed(0)}с`, 6, 14);
       if (left<=0){ state.slowActive=false; elSlow.disabled = state.slowCharges<=0; }
     }
   }
   function drawCell(x,y,color){
-    ctx.fillStyle=color;
-    ctx.fillRect(x*CELL, y*CELL, CELL, CELL);
-    ctx.fillStyle='rgba(255,255,255,.15)';
-    ctx.fillRect(x*CELL, y*CELL, CELL, 4); // блик
-    ctx.strokeStyle='rgba(0,0,0,.35)';
-    ctx.strokeRect(x*CELL, y*CELL, CELL, CELL);
+    ctx.fillStyle=color; ctx.fillRect(x*CELL,y*CELL,CELL,CELL);
+    ctx.fillStyle='rgba(255,255,255,.15)'; ctx.fillRect(x*CELL,y*CELL,CELL,4);
+    ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.strokeRect(x*CELL,y*CELL,CELL,CELL);
   }
   function drawNext(){
     elNext.innerHTML='';
-    const m = state.next.mtx;
-    const h = m.length, w = m[0].length;
-    for (let y=0;y<4;y++){
-      for (let x=0;x<4;x++){
-        const cell=document.createElement('div'); cell.className='cell';
-        if (y<h && x<w && m[y][x]){ cell.style.background = state.next.color; }
-        elNext.appendChild(cell);
-      }
+    const m=state.next.mtx, h=m.length, w=m[0].length;
+    for(let y=0;y<4;y++) for(let x=0;x<4;x++){
+      const cell=document.createElement('div'); cell.className='cell';
+      if (y<h && x<w && m[y][x]) cell.style.background=state.next.color;
+      elNext.appendChild(cell);
     }
   }
   function renderUI(){
@@ -345,141 +353,158 @@
     elScore.textContent=state.score.toLocaleString('ru-RU');
     elStars.textContent=state.stars;
     elSlowCharges.textContent=state.slowCharges;
-    elSlow.disabled = state.slowCharges<=0 || state.slowActive;
+    elSlow.disabled = state.slowCharges<=0 || state.slowActive || !state.started;
   }
-  function toast(msg, ms=1200){
-    elToast.textContent=msg; elToast.classList.add('show');
-    clearTimeout(toast._t); toast._t=setTimeout(()=>elToast.classList.remove('show'),ms);
-  }
+  function toast(msg,ms=1200){ elToast.textContent=msg; elToast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>elToast.classList.remove('show'),ms); }
 
-  // ======= Игровой цикл =======
+  /* ===== Игровой цикл ===== */
+  function gravityDelay(){
+    const base = state.slowActive ? state.tickSlow : state.tickBase;
+    const lvFactor = Math.max(0.15, 1 - (state.level-1)*0.08);
+    return Math.floor(base * lvFactor);
+  }
   function step(ts){
-    if (state.paused || state.over) { draw(); requestAnimationFrame(step); return; }
-    if (!state.lastFall) state.lastFall = ts;
+    if (!state.started){ draw(); requestAnimationFrame(step); return; }
+    if (state.paused || state.over){ draw(); requestAnimationFrame(step); return; }
+    if (!state.lastFall) state.lastFall=ts;
 
-    const delay = gravityDelay();
+    const delay=gravityDelay();
     if (ts - state.lastFall >= delay){
       state.lastFall = ts;
-      // пытаемся опустить
       state.cur.y++;
-      if (collide(state.grid, state.cur)){
+      if (collide(state.grid,state.cur)){
         state.cur.y--;
-        merge(state.grid, state.cur);
-        clearLines();
-        newPiece();
+        merge(state.grid,state.cur); clearLines(); newPiece();
       }
     }
     draw();
     requestAnimationFrame(step);
   }
 
-  // ======= Управление =======
+  /* ===== Управление (клавиатура) ===== */
   function move(dx){
-    if (state.paused || state.over) return;
-    state.cur.x += dx;
-    if (collide(state.grid, state.cur)) state.cur.x -= dx;
+    if (!state.started || state.paused || state.over) return;
+    state.cur.x+=dx; if (collide(state.grid,state.cur)) state.cur.x-=dx;
   }
   function rotateCur(){
-    if (state.paused || state.over) return;
-    const prev = state.cur.mtx;
-    state.cur.mtx = rotate(prev);
-    // wall-kick небольшой
-    if (collide(state.grid, state.cur)){
-      state.cur.x++;
-      if (collide(state.grid, state.cur)){
-        state.cur.x-=2;
-        if (collide(state.grid, state.cur)){
-          state.cur.x++;
-          state.cur.mtx = prev; // откат
+    if (!state.started || state.paused || state.over) return;
+    const prev=state.cur.mtx; state.cur.mtx=rotate(prev);
+    if (collide(state.grid,state.cur)){
+      state.cur.x++; if (collide(state.grid,state.cur)){
+        state.cur.x-=2; if (collide(state.grid,state.cur)){
+          state.cur.x++; state.cur.mtx=prev;
         }
       }
     }
   }
   function softDrop(){
-    if (state.paused || state.over) return;
-    state.cur.y++;
-    if (collide(state.grid, state.cur)) { state.cur.y--; }
-    else { state.score+=1; renderUI(); }
+    if (!state.started || state.paused || state.over) return;
+    state.cur.y++; if (collide(state.grid,state.cur)) state.cur.y--; else { state.score+=1; renderUI(); }
   }
   function hardDrop(){
-    if (state.paused || state.over) return;
-    let dist=0;
-    while(true){
-      state.cur.y++; if (collide(state.grid, state.cur)){ state.cur.y--; break; } dist++;
-    }
-    state.score += 2*dist; renderUI();
-    merge(state.grid, state.cur); clearLines(); newPiece(); draw();
+    if (!state.started || state.paused || state.over) return;
+    let dist=0; while(true){ state.cur.y++; if (collide(state.grid,state.cur)){ state.cur.y--; break; } dist++; }
+    state.score+=2*dist; renderUI(); merge(state.grid,state.cur); clearLines(); newPiece(); draw();
   }
-  function togglePause(){
-    state.paused=!state.paused;
-    elPause.textContent = state.paused? '▶️ Продолжить' : '⏸ Пауза';
-  }
+  function togglePause(){ if (!state.started) return; state.paused=!state.paused; elPause.textContent=state.paused?'▶️':'⏸'; }
   addEventListener('keydown', e=>{
     if (e.code==='ArrowLeft') move(-1);
     else if (e.code==='ArrowRight') move(1);
     else if (e.code==='ArrowUp') rotateCur();
     else if (e.code==='ArrowDown') softDrop();
-    else if (e.code==='Space') { e.preventDefault(); hardDrop(); }
+    else if (e.code==='Space'){ e.preventDefault(); hardDrop(); }
     else if (e.code==='KeyP') togglePause();
   });
-  elPause.onclick=togglePause;
 
-  // ======= Замедление =======
+  /* ===== Управление (кнопки на экране) ===== */
+  elLeft.onclick = ()=> move(-1);
+  elRight.onclick = ()=> move(1);
+  elRotate.onclick = ()=> rotateCur();
+  elDown.onclick = ()=> softDrop();
+  elDrop.onclick = ()=> hardDrop();
+  elPause.onclick = ()=> togglePause();
+
+  /* ===== Управление (свайпы/тапы по полю) ===== */
+  elCanvas.addEventListener('touchstart', e=>{
+    const t=e.changedTouches[0]; state.touch={x:t.clientX,y:t.clientY,active:true,ts:Date.now()}; e.preventDefault();
+  }, {passive:false});
+  elCanvas.addEventListener('touchmove', e=>{
+    if(!state.touch.active) return;
+    const t=e.changedTouches[0]; const dx=t.clientX-state.touch.x; const dy=t.clientY-state.touch.y;
+    // горизонтальные свайпы: шаги
+    if (Math.abs(dx)>30 && Math.abs(dx)>Math.abs(dy)){
+      if (dx>0) move(1); else move(-1);
+      state.touch.x=t.clientX; state.touch.y=t.clientY;
+    }
+    // вертикальный вниз — ускорение
+    if (dy>28) { softDrop(); state.touch.x=t.clientX; state.touch.y=t.clientY; }
+    e.preventDefault();
+  }, {passive:false});
+  elCanvas.addEventListener('touchend', e=>{
+    const dt = Date.now() - (state.touch.ts||0);
+    const t=e.changedTouches[0];
+    const dx=Math.abs(t.clientX-state.touch.x0||0), dy=Math.abs(t.clientY-state.touch.y0||0);
+    // короткий тап = поворот, долгий (>400ms) = хард-дроп
+    if (dt<350) rotateCur(); else hardDrop();
+    state.touch.active=false;
+    e.preventDefault();
+  }, {passive:false});
+  // фиксация начальной точки для корректного dt
+  elCanvas.addEventListener('touchstart', e=>{ const t=e.changedTouches[0]; state.touch.x0=t.clientX; state.touch.y0=t.clientY; }, {passive:true});
+
+  /* ===== Замедление ===== */
   elSlow.onclick = ()=>{
-    if (state.slowCharges<=0 || state.slowActive) return;
-    state.slowCharges--; state.slowActive=true; state.slowUntil = performance.now()+60000; // 60с
-    toast('Замедление на 60 секунд');
-    saveAll(); renderUI();
+    if (state.slowCharges<=0 || state.slowActive || !state.started) return;
+    state.slowCharges--; state.slowActive=true; state.slowUntil=performance.now()+60000;
+    toast('Замедление на 60 секунд'); saveAll(); renderUI();
   };
 
-  // ======= Магазин =======
+  /* ===== Магазин ===== */
   elBuySlow.onclick = ()=>{
-    if (state.stars < 30){ toast('Нужно 30⭐'); return; }
-    state.stars -= 30; state.slowCharges++;
-    toast('Куплен 1 заряд замедления 🐢');
-    saveAll(); renderUI();
+    if (state.stars<30){ toast('Нужно 30⭐'); return; }
+    state.stars-=30; state.slowCharges++; toast('Куплен заряд замедления 🐢'); saveAll(); renderUI();
   };
 
-  // ======= Лидерборд (локальный с ботами) =======
+  // Покупка звёзд за реальные деньги через Telegram Invoice (если INVOICE_URL указан)
+  elBuyStars.onclick = async ()=>{
+    if (window.Telegram?.WebApp && INVOICE_URL){
+      try{
+        Telegram.WebApp.openInvoice(INVOICE_URL, (status)=>{
+          // Возможные статусы: 'paid', 'cancelled', 'failed', 'pending'
+          if (status==='paid'){
+            // здесь обычно сервер подтверждает платёж и возвращает количество звёзд
+            // демо: добавим 50⭐
+            state.stars += 50; toast('Покупка успешна: +50⭐'); saveAll(); renderUI();
+          } else if (status==='cancelled'){ toast('Покупка отменена'); }
+          else if (status==='failed'){ toast('Оплата не прошла'); }
+        });
+      }catch(e){ toast('Ошибка оплаты'); }
+    } else {
+      // ДЕМО-режим вне Telegram: просто добавим тестовые ⭐
+      state.stars += 20; toast('Демо-покупка: +20⭐ (без оплаты)'); saveAll(); renderUI();
+    }
+  };
+
+  /* ===== Лидерборд (локальный) ===== */
   function seedBots(){
-    const bots = [
-      { uid:'b1', name:'NeoHam', score: 18000 },
-      { uid:'b2', name:'Foxy', score: 12400 },
-      { uid:'b3', name:'ByteCat', score: 9300 },
-      { uid:'b4', name:'Sakura', score: 6800 },
-      { uid:'b5', name:'Rider', score: 4700 },
-    ];
-    localStorage.setItem('tetris-bots', JSON.stringify(bots));
-    return bots;
+    const bots=[{uid:'b1',name:'NeoHam',score:18000},{uid:'b2',name:'Foxy',score:12400},{uid:'b3',name:'ByteCat',score:9300},{uid:'b4',name:'Sakura',score:6800},{uid:'b5',name:'Rider',score:4700}];
+    localStorage.setItem('tetris-bots', JSON.stringify(bots)); return bots;
   }
   function getLB(){
     const bots = JSON.parse(localStorage.getItem('tetris-bots')||'null') || seedBots();
     const me = { uid: state.uid, name: state.name, score: state.hi||state.score };
-    let list = bots.slice();
-    // обновим запись игрока
-    const i = list.findIndex(r=>r.uid===me.uid);
-    if (i>=0) list[i]=me; else list.push(me);
-    list.sort((a,b)=>b.score-a.score);
-    return list.slice(0,20);
+    const list = bots.slice(); const i=list.findIndex(r=>r.uid===me.uid); if(i>=0) list[i]=me; else list.push(me);
+    list.sort((a,b)=>b.score-a.score); return list.slice(0,20);
   }
-  function upsertSelfToLB(){
-    const list = getLB();
-    localStorage.setItem('tetris-lb', JSON.stringify(list));
-  }
+  function upsertSelfToLB(){ const list=getLB(); localStorage.setItem('tetris-lb', JSON.stringify(list)); }
   function renderLB(){
-    const list = getLB();
-    elLB.innerHTML='';
+    const list=getLB(); elLB.innerHTML='';
     list.forEach((row,i)=>{
-      const el=document.createElement('div'); el.className='lbrow';
-      const you=row.uid===state.uid;
-      el.innerHTML = `
-        <div>${i+1}</div>
+      const el=document.createElement('div'); el.className='lbrow'; const you=row.uid===state.uid;
+      el.innerHTML=`<div>${i+1}</div>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="avatar">${(row.name||'U')[0].toUpperCase()}</div>
-          <div>
-            <div><b>${row.name}${you?' (ты)':''}</b></div>
-            <div class="tiny">${you?('ID: '+state.uid):''}</div>
-          </div>
+          <div><div><b>${row.name}${you?' (ты)':''}</b></div><div class="tiny">${you?('ID: '+state.uid):''}</div></div>
         </div>
         <div><b>${row.score.toLocaleString('ru-RU')}</b></div>`;
       elLB.appendChild(el);
@@ -487,25 +512,18 @@
   }
   elSyncLB.onclick=()=>{ upsertSelfToLB(); renderLB(); toast('Лидерборд обновлён'); };
 
-  // ======= Табы (для узких экранов) =======
+  /* ===== Табы (для мобилы) ===== */
   document.querySelectorAll('.tabbtn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       const t=btn.dataset.tab;
-      // показываем часть правой панели
-      document.querySelectorAll('.side .card').forEach((c,idx)=>{
-        c.style.display = (t==='play' && idx===0) || (t==='shop' && idx===1) || (t==='lb' && idx===2) ? 'block' : 'none';
-      });
+      document.querySelectorAll('.side .card').forEach((c,i)=> c.style.display = (t==='play'&&i===0)||(t==='shop'&&i===1)||(t==='lb'&&i===2) ? 'block' : 'none');
     });
   });
-  // начальная видимость на мобиле
-  (function initTabVisibility(){
-    const cards=document.querySelectorAll('.side .card');
-    cards.forEach((c,i)=> c.style.display = i===0 ? 'block' : (window.innerWidth<900 ? 'none' : 'block'));
-  })();
+  (function initTabs(){ const cards=document.querySelectorAll('.side .card'); cards.forEach((c,i)=> c.style.display = i===0 ? 'block' : (innerWidth<900 ? 'none' : 'block')); })();
 
-  // ======= Сохранение =======
+  /* ===== Сохранение ===== */
   function saveAll(){
     localStorage.setItem('tetris-level', state.level);
     localStorage.setItem('tetris-score', state.score);
@@ -516,18 +534,21 @@
     localStorage.setItem('tetris-name', state.name);
   }
 
-  // ======= Старт =======
+  /* ===== Старт/рестарт ===== */
   function resetGrid(){ state.grid=createGrid(W,H); }
-  function startGame(){
-    resetGrid(); state.over=false; state.paused=false;
-    state.score=0; state.level = Math.max(1, state.level); // продолжаем с текущего уровня
-    state.lastFall=0; state.slowActive=false;
-    newPiece(); renderUI(); draw(); requestAnimationFrame(step);
-  }
+  function showStart(){ elStartOverlay.style.display='grid'; }
+  function hideStart(){ elStartOverlay.style.display='none'; }
 
-  // подготовка
-  drawNext(); renderUI(); renderLB();
-  startGame();
+  function startGame(){
+    resetGrid();
+    state.over=false; state.paused=false; state.started=true;
+    state.score=0; state.lastFall=0; state.slowActive=false;
+    newPiece(); renderUI(); draw();
+  }
+  elStartBtn.onclick = ()=>{ hideStart(); startGame(); };
+
+  /* ===== Инициализация ===== */
+  drawNext(); renderUI(); renderLB(); showStart(); requestAnimationFrame(step);
 </script>
 </body>
 </html>
