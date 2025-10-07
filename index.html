@@ -3,11 +3,57 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Мой сайт</title>
+    <title>Tap Game</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        background: linear-gradient(135deg, #00c6ff, #0072ff);
+        color: white;
+      }
+      button {
+        background: white;
+        color: #0072ff;
+        border: none;
+        padding: 20px 40px;
+        font-size: 22px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      button:hover {
+        background: #e0e0e0;
+      }
+      h1 {
+        font-size: 2em;
+        margin-bottom: 10px;
+      }
+      p {
+        font-size: 1.2em;
+      }
+    </style>
   </head>
-  <body style="font-family:sans-serif;padding:20px">
-    <h1>Привет, Эльшан 👋</h1>
-    <p>Это мой сайт на Vercel.</p>
-    <button onclick="alert('Кнопка нажата!')">Тык</button>
+  <body>
+    <h1>🔥 Tap Game 🔥</h1>
+    <p>Очки: <span id="score">0</span></p>
+    <button onclick="tap()">ЖМИ!</button>
+
+    <script>
+      let score = 0;
+      function tap() {
+        score++;
+        document.getElementById('score').innerText = score;
+      }
+
+      // Telegram WebApp API — автоматическое разворачивание окна
+      if (window.Telegram?.WebApp) {
+        Telegram.WebApp.expand();
+      }
+    </script>
   </body>
 </html>
