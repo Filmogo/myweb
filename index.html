@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tap Game</title>
+<p>Сейчас онлайн: <b id="online">0</b></p>
     <style>
       body {
         font-family: sans-serif;
@@ -55,5 +56,60 @@
         Telegram.WebApp.expand();
       }
     </script>
+    <!-- Ably Realtime CDN -->
+<script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+
+<script>
+  // === Онлайн-счётчик через Ably presence ===
+  (function () {
+    // 1) ВСТАВЬ СВОЙ КЛЮЧ НИЖЕ
+    const ABLY_KEY = 'PASTE_YOUR_ABLY_KEY_HERE';
+
+    // 2) Создаём клиент
+    const ably = new Ably.Realtime({ key: ABLY_KEY });
+
+    // 3) Канал с presence (название любое, но одинаковое у всех)
+    const channel = ably.channels.get('myweb-online');
+
+    // 4) Функция обновления текста на странице
+    function setOnline(n) {
+      const el = document.getElementById('online');
+      if (el) el.textContent = n;
+    }
+
+    // 5) После подключения — входим в presence и подписываемся на изменения
+    ably.connection.on('connected', () => {
+      // Уникальный id текущего игрока (MVP)
+      const me = 'user-' + Math.random().toString(16).slice(2);
+
+      // Входим как присутствующий
+      channel.presence.enter({ id: me }, (err) => {
+        if (err) console.error('presence enter error', err);
+      });
+
+      // Получаем текущее число онлайн
+      channel.presence.get((err, members) => {
+        if (!err && members) setOnline(members.length);
+      });
+
+      // Обновляем при каждом входе/выходе
+      channel.presence.subscribe(['enter', 'leave', 'update'], () => {
+        channel.presence.get((err, members) => {
+          if (!err && members) setOnline(members.length);
+        });
+      });
+
+      // При закрытии страницы — выходим из presence
+      window.addEventListener('beforeunload', () => {
+        try { channel.presence.leave(); } catch(e){}
+      });
+      window.addEventListener('pagehide', () => {
+        try { channel.presence.leave(); } catch(e){}
+      });
+    });
+  })();
+</script>
+
   </body>
 </html>
+
