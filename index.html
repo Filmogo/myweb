@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>🔥 Tap Game — Neo</title>
   <meta name="theme-color" content="#0b1226" />
-
   <style>
     :root{
+      --vh: 1vh; /* обновляем скриптом ниже */
       --bg:#0b1226;
       --bg-grad1:#0b1226; --bg-grad2:#0f1f4a; --bg-grad3:#0b1226;
       --card:#101a36cc; --card-strong:#0e1730;
@@ -17,18 +17,23 @@
       --radius:18px;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html, body { height: 100%; }
     body{
-      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Noto Sans", Arial, "Apple Color Emoji","Segoe UI Emoji";
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Noto Sans", Arial, "Apple Color Emoji","Segoe UI Emoji";
       background: radial-gradient(1200px 800px at 20% 10%, var(--bg-grad2), transparent),
                   radial-gradient(900px 700px at 80% 90%, #102054, transparent),
                   linear-gradient(180deg, var(--bg-grad1), var(--bg-grad3));
       color:var(--text);
+      height: calc(var(--vh) * 100); /* фикс 100vh на мобиле */
+      overflow: hidden;               /* убираем скролл */
       display:flex; align-items:center; justify-content:center;
     }
     .app{
       width:min(1050px,100%);
       padding: clamp(14px, 2.2vw, 24px);
+      height: 100%;
+      display:flex; flex-direction:column;
     }
     .hud{
       display:grid; gap:12px; grid-template-columns:1fr auto auto;
@@ -49,6 +54,7 @@
 
     .grid{
       display:grid; grid-template-columns:1.2fr .8fr; gap:16px;
+      flex:1; min-height:0;
     }
     @media (max-width: 880px){
       .grid{ grid-template-columns:1fr; }
@@ -60,6 +66,7 @@
       box-shadow: var(--shadow);
       padding:18px;
     }
+    .card.vflex{ flex:1; display:flex; flex-direction:column; }
 
     /* SCORE PANEL */
     .score{
@@ -76,10 +83,11 @@
 
     /* TAP AREA */
     .tapwrap{
-      display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:8px;
+      flex:1; display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:8px;
     }
     .tap{
-      width:min(360px, 75vw); aspect-ratio:1/1; border-radius:32px; border:1px solid #1e3470;
+      width: min(380px, 70vmin);
+      aspect-ratio:1/1; border-radius:32px; border:1px solid #1e3470;
       background:
         radial-gradient(200px 200px at 70% 25%, rgba(112,182,255,.25), transparent),
         radial-gradient(400px 400px at 30% 80%, rgba(114,255,210,.15), transparent),
@@ -94,9 +102,7 @@
       font-size: clamp(20px, 5.5vw, 28px); color:#eaf2ff; opacity:.92; font-weight:700; letter-spacing:.3px;
       text-align:center;
     }
-    .burst{
-      position:absolute; inset:0; pointer-events:none; overflow:hidden;
-    }
+    .burst{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
     .bubble{
       position:absolute; font-weight:800; filter: drop-shadow(0 8px 16px rgba(0,0,0,.35));
       animation: pop 700ms ease forwards;
@@ -150,9 +156,7 @@
     .toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
 
     /* ACHIEVEMENTS */
-    .achv{
-      display:flex; gap:10px; flex-wrap:wrap
-    }
+    .achv{ display:flex; gap:10px; flex-wrap:wrap }
     .chip{
       border:1px solid #1a2a56; background:#0a1a38; color:var(--muted);
       border-radius:999px; padding:6px 10px; font-size:12px
@@ -174,7 +178,6 @@
     <div class="grid">
       <!-- LEFT: GAME -->
       <div class="card vflex">
-
         <div class="score">
           <div class="vflex">
             <div class="muted">очки</div>
@@ -198,10 +201,8 @@
             </div>
             <div class="burst" id="burst"></div>
           </button>
-
           <div class="achv" id="achv"></div>
         </div>
-
       </div>
 
       <!-- RIGHT: SHOP -->
@@ -210,10 +211,7 @@
           <div class="title" style="font-size:18px">Магазин апгрейдов</div>
           <button class="ghost" id="resetBtn" title="Сбросить прогресс">Сброс</button>
         </div>
-
-        <div class="shop" id="shop">
-          <!-- элементы магазина наполняются JS -->
-        </div>
+        <div class="shop" id="shop"></div>
       </div>
     </div>
 
@@ -222,7 +220,6 @@
         <span class="dot" id="onlineDot"></span>
         Сейчас онлайн: <b id="online">—</b>
       </div>
-
       <div class="controls">
         <button class="ghost" id="soundBtn">🔊 Звук: выкл</button>
         <button class="ghost" id="shareBtn">📤 Поделиться очками</button>
@@ -232,85 +229,61 @@
 
   <div class="toast" id="toast"></div>
 
-  <!-- Ably Realtime (для онлайн-счётчика, опционально) -->
+  <!-- Ably Realtime (опционально для счётчика онлайн) -->
   <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
 
   <script>
+    // ====== ФИКС 100vh НА МОБИЛЕ ======
+    function setVH(){
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', vh + 'px');
+    }
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+    setTimeout(setVH, 50);
+
     // =========================
     //      GAME STATE
     // =========================
     const state = {
       score: 0,
       basePerTap: 1,
-      tapMultiplier: 1,   // множитель от апгрейдов
-      combo: 1,           // живой комбо
+      tapMultiplier: 1,
+      combo: 1,
       maxCombo: 5,
-      comboDecayMs: 1800, // сколько держится комбо без клика
+      comboDecayMs: 1800,
       lastTapAt: 0,
       perSec: 0,
       level: 1,
       sound: false,
       autoClickers: 0,
-      upgrades: {
-        tapPlus: 0,     // +1 к базовому тапу
-        mult: 0,        // множитель пер-тап
-        autoclick: 0,   // автокликеров
-        comboCap: 0,    // лимит комбо
-      },
+      upgrades: { tapPlus:0, mult:0, autoclick:0, comboCap:0 },
     };
 
     const shopDefs = [
-      {
-        key: 'tapPlus',
-        title: 'Сильнее палец (+1 за тап)',
-        desc: 'Увеличивает базовую силу нажатий',
-        baseCost: 20,
-        costGrow: 1.25,
-        apply: () => { state.basePerTap += 1; },
-        icon: '🖐️'
-      },
-      {
-        key: 'mult',
-        title: 'Множитель тапов (x1.15)',
-        desc: 'Множит очки за тап',
-        baseCost: 100,
-        costGrow: 1.6,
-        apply: () => { state.tapMultiplier *= 1.15; },
-        icon: '✨'
-      },
-      {
-        key: 'autoclick',
-        title: 'Автокликер (+1/s)',
-        desc: 'Каждую секунду добавляет очки',
-        baseCost: 150,
-        costGrow: 1.55,
-        apply: () => { state.autoClickers += 1; recomputePerSec(); },
-        icon: '⚙️'
-      },
-      {
-        key: 'comboCap',
-        title: 'Комбо-лимит (+1 к макс)',
-        desc: 'Максимальный множитель комбо увеличивается',
-        baseCost: 180,
-        costGrow: 1.7,
-        apply: () => { state.maxCombo += 1; },
-        icon: '🔥'
-      },
+      { key:'tapPlus',   title:'Сильнее палец (+1 за тап)', desc:'Увеличивает базовую силу нажатий', baseCost:20,  costGrow:1.25, icon:'🖐️',
+        apply:()=>{ state.basePerTap += 1; } },
+      { key:'mult',      title:'Множитель тапов (x1.15)',  desc:'Множит очки за тап',                 baseCost:100, costGrow:1.6,  icon:'✨',
+        apply:()=>{ state.tapMultiplier *= 1.15; } },
+      { key:'autoclick', title:'Автокликер (+1/s)',         desc:'Каждую секунду добавляет очки',      baseCost:150, costGrow:1.55, icon:'⚙️',
+        apply:()=>{ state.autoClickers += 1; recomputePerSec(); } },
+      { key:'comboCap',  title:'Комбо-лимит (+1 к макс)',   desc:'Максимальный множитель комбо ↑',     baseCost:180, costGrow:1.7,  icon:'🔥',
+        apply:()=>{ state.maxCombo += 1; } },
     ];
+    function costFor(key, level){ const d=shopDefs.find(x=>x.key===key); return Math.floor(d.baseCost*Math.pow(d.costGrow,level)); }
 
-    function costFor(key, level){
-      const def = shopDefs.find(x=>x.key===key);
-      return Math.floor(def.baseCost * Math.pow(def.costGrow, level));
-    }
-
+    // =========================
+    //      SAVE / LOAD
+    // =========================
     function save(){
       localStorage.setItem('tapneo', JSON.stringify(state));
       flashSave();
     }
     function load(){
-      const raw = localStorage.getItem('tapneo');
-      if(!raw) return;
       try{
+        const raw = localStorage.getItem('tapneo');
+        if(!raw) return;
         const prev = JSON.parse(raw);
         Object.assign(state, prev);
       }catch(e){}
@@ -337,20 +310,10 @@
     const elOnlineBox = document.getElementById('onlineBox');
     const elOnlineDot = document.getElementById('onlineDot');
 
-    function flashSave(){
-      elSaveStatus.textContent = 'сохранено ✔';
-      setTimeout(()=> elSaveStatus.textContent = 'авто-сохранение', 1000);
-    }
-
+    function flashSave(){ elSaveStatus.textContent='сохранено ✔'; setTimeout(()=>elSaveStatus.textContent='авто-сохранение',1000); }
     function fmt(n){ return Math.floor(n).toLocaleString('ru-RU'); }
-
-    function perTapNow(){
-      return state.basePerTap * state.tapMultiplier * state.combo;
-    }
-
-    function recomputePerSec(){
-      state.perSec = state.autoClickers * (state.basePerTap * 0.5); // автокликер половина базового удара
-    }
+    function perTapNow(){ return state.basePerTap * state.tapMultiplier * state.combo; }
+    function recomputePerSec(){ state.perSec = state.autoClickers * (state.basePerTap * 0.5); }
 
     function render(){
       elScore.textContent = fmt(state.score);
@@ -362,73 +325,58 @@
     }
 
     function addBubble(text, color){
-      const b = document.createElement('div');
-      b.className='bubble'; b.textContent = text;
-      b.style.left = (40 + Math.random()*40) + '%';
-      b.style.top = (40 + Math.random()*20) + '%';
-      b.style.color = color || '#def';
-      b.style.fontSize = (16 + Math.random()*10) + 'px';
+      const b=document.createElement('div');
+      b.className='bubble'; b.textContent=text;
+      b.style.left=(40+Math.random()*40)+'%';
+      b.style.top=(40+Math.random()*20)+'%';
+      b.style.color=color||'#cfe4ff';
+      b.style.fontSize=(16+Math.random()*10)+'px';
       elBurst.appendChild(b);
-      setTimeout(()=> b.remove(), 800);
+      setTimeout(()=>b.remove(),800);
     }
 
     function levelUpIfNeeded(){
-      const need = Math.pow(10, state.level) * 100; // 100, 1000, 10000...
+      const need = Math.pow(10, state.level) * 100;
       if(state.score >= need){
-        state.level++;
-        toast(`Новый уровень ${state.level}!`, 1800);
-        unlockAchievements();
+        state.level++; toast(`Новый уровень ${state.level}!`, 1800); unlockAchievements();
       }
     }
 
     function unlockAchievements(){
-      const list = [];
-      if(state.score >= 100) list.push('💠 100 очков');
-      if(state.score >= 1000) list.push('💠 1000 очков');
-      if(state.autoClickers >= 5) list.push('🧪 5 автокликеров');
-      if(state.maxCombo >= 7) list.push('🔥 комбо-мастер');
-      elAchv.innerHTML = '';
-      list.forEach(t=>{
-        const c = document.createElement('div');
-        c.className='chip'; c.textContent=t;
-        elAchv.appendChild(c);
-      });
+      const list=[];
+      if(state.score>=100) list.push('💠 100 очков');
+      if(state.score>=1000) list.push('💠 1000 очков');
+      if(state.autoClickers>=5) list.push('🧪 5 автокликеров');
+      if(state.maxCombo>=7) list.push('🔥 комбо-мастер');
+      elAchv.innerHTML=''; list.forEach(t=>{ const c=document.createElement('div'); c.className='chip'; c.textContent=t; elAchv.appendChild(c); });
     }
 
     // =========================
     //      TAP LOGIC
     // =========================
     function tap(){
-      // combo grow
-      const now = Date.now();
-      const dt = now - state.lastTapAt;
-      state.lastTapAt = now;
-      if(dt < state.comboDecayMs) {
-        state.combo = Math.min((state.combo + 0.1), state.maxCombo);
-      } else {
-        state.combo = 1;
-      }
+      const now=Date.now(), dt=now-state.lastTapAt; state.lastTapAt=now;
+      state.combo = dt<state.comboDecayMs ? Math.min(state.combo+0.1, state.maxCombo) : 1;
 
       const add = perTapNow();
       state.score += add;
-      addBubble('+' + fmt(add), '#cfe4ff');
+      addBubble('+'+fmt(add), '#cfe4ff');
       levelUpIfNeeded();
       render();
       autoSaveMaybe();
       if(state.sound) playTick();
     }
-
     elTap.addEventListener('click', tap);
-    elTap.addEventListener('keydown', (e)=>{ if(e.code==='Space' || e.code==='Enter') tap(); });
+    elTap.addEventListener('keydown', e=>{ if(e.code==='Space'||e.code==='Enter') tap(); });
 
     // combo decay
     setInterval(()=>{
       if(!state.lastTapAt) return;
-      if(Date.now() - state.lastTapAt > state.comboDecayMs && state.combo>1){
-        state.combo = Math.max(1, +(state.combo - 0.1).toFixed(1));
-        elCombo.textContent = 'x'+state.combo.toFixed(1);
+      if(Date.now()-state.lastTapAt>state.comboDecayMs && state.combo>1){
+        state.combo=Math.max(1, +(state.combo-0.1).toFixed(1));
+        elCombo.textContent='x'+state.combo.toFixed(1);
       }
-    }, 150);
+    },150);
 
     // =========================
     //      SHOP
@@ -436,65 +384,52 @@
     function renderShop(){
       elShop.innerHTML='';
       shopDefs.forEach(def=>{
-        const lvl = state.upgrades[def.key] || 0;
+        const lvl = state.upgrades[def.key]||0;
         const price = costFor(def.key, lvl);
 
-        const row = document.createElement('div');
-        row.className='row';
-
-        const left = document.createElement('div');
-        left.innerHTML = `<div class="title">${def.icon} ${def.title}</div>
-                          <div class="tiny">${def.desc}</div>
-                          <div class="tiny">уровень: <b>${lvl}</b></div>`;
-
-        const right = document.createElement('div');
-        const btn = document.createElement('button');
-        btn.textContent = `Купить — ${fmt(price)}`;
-        btn.disabled = state.score < price;
+        const row=document.createElement('div'); row.className='row';
+        const left=document.createElement('div');
+        left.innerHTML=`<div class="title">${def.icon} ${def.title}</div>
+                        <div class="tiny">${def.desc}</div>
+                        <div class="tiny">уровень: <b>${lvl}</b></div>`;
+        const right=document.createElement('div');
+        const btn=document.createElement('button');
+        btn.textContent=`Купить — ${fmt(price)}`;
+        btn.disabled=state.score<price;
         btn.addEventListener('click', ()=>{
-          if(state.score < price) return;
-          state.score -= price;
+          if(state.score<price) return;
+          state.score-=price;
           def.apply();
-          state.upgrades[def.key] = lvl+1;
+          state.upgrades[def.key]=lvl+1;
           recomputePerSec();
           render();
           toast(`Куплено: ${def.title}`);
           autoSaveNow();
         });
         right.appendChild(btn);
-
-        row.appendChild(left);
-        row.appendChild(right);
+        row.appendChild(left); row.appendChild(right);
         elShop.appendChild(row);
       });
     }
 
     // passive income
     setInterval(()=>{
-      if(state.perSec > 0){
+      if(state.perSec>0){
         state.score += state.perSec;
-        addBubble('+' + fmt(state.perSec), '#72ffd2');
-        levelUpIfNeeded();
-        render();
-        autoSaveMaybe();
+        addBubble('+'+fmt(state.perSec), '#72ffd2');
+        levelUpIfNeeded(); render(); autoSaveMaybe();
       }
-    }, 1000);
+    },1000);
 
     // =========================
     //      SAVE / RESET
     // =========================
-    let saveCooldown = false;
-    function autoSaveMaybe(){
-      if(saveCooldown) return;
-      saveCooldown = true;
-      setTimeout(()=>{ save(); saveCooldown=false; }, 700);
-    }
+    let saveCooldown=false;
+    function autoSaveMaybe(){ if(saveCooldown) return; saveCooldown=true; setTimeout(()=>{ save(); saveCooldown=false; },700); }
     function autoSaveNow(){ save(); }
-
-    elReset.addEventListener('click', ()=>{
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
       if(!confirm('Сбросить прогресс?')) return;
-      localStorage.removeItem('tapneo');
-      location.reload();
+      localStorage.removeItem('tapneo'); location.reload();
     });
 
     // =========================
@@ -504,13 +439,10 @@
     async function initAudio(){
       try{
         audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-        // генерим короткий звук
         const dur=.06, sr=audioCtx.sampleRate, frames=sr*dur;
         const buf=audioCtx.createBuffer(1, frames, sr);
         const ch=buf.getChannelData(0);
-        for(let i=0;i<frames;i++){
-          const t=i/sr; ch[i]=Math.sin(2*Math.PI*880*t)*Math.exp(-18*t);
-        }
+        for(let i=0;i<frames;i++){ const t=i/sr; ch[i]=Math.sin(2*Math.PI*880*t)*Math.exp(-18*t); }
         tickBuf=buf;
       }catch(e){}
     }
@@ -520,15 +452,14 @@
       const gain=audioCtx.createGain(); gain.gain.value=.2;
       src.connect(gain).connect(audioCtx.destination); src.start();
     }
-
-    elSoundBtn.addEventListener('click', async ()=>{
+    document.getElementById('soundBtn').addEventListener('click', async ()=>{
       if(!audioCtx){ await initAudio(); }
-      state.sound = !state.sound;
-      elSoundBtn.textContent = state.sound? '🔊 Звук: вкл' : '🔊 Звук: выкл';
+      state.sound=!state.sound;
+      document.getElementById('soundBtn').textContent = state.sound? '🔊 Звук: вкл' : '🔊 Звук: выкл';
       autoSaveNow();
     });
 
-    elShareBtn.addEventListener('click', async ()=>{
+    document.getElementById('shareBtn').addEventListener('click', async ()=>{
       const text = `Мои очки в Tap Game — Neo: ${fmt(state.score)}!`;
       try{
         if(navigator.share){
@@ -555,17 +486,14 @@
     //      ONLINE (ABLY)
     // =========================
     (function setupOnline(){
-      // ВСТАВЬ СВОЙ КЛЮЧ, иначе блок скроется
-      const ABLY_KEY = 'YOUR_ABLY_KEY_HERE'; // ← подставь свой ключ Ably или оставь пустым
+      const ABLY_KEY = 'YOUR_ABLY_KEY_HERE'; // ← подставь свой ключ Ably или оставь как есть — блок скроется
       if(!ABLY_KEY || ABLY_KEY.includes('YOUR_ABLY_KEY_HERE')){
-        // скрываем, если ключа нет
         elOnlineBox.style.display='none';
         return;
       }
       try{
         const ably = new Ably.Realtime({ key: ABLY_KEY });
         const ch = ably.channels.get('tapneo-online');
-
         const me = 'u-' + Math.random().toString(16).slice(2);
         elOnlineBox.style.display='flex';
 
@@ -580,9 +508,7 @@
           window.addEventListener('beforeunload', ()=>{ try{ ch.presence.leave(); }catch(e){} });
           window.addEventListener('pagehide', ()=>{ try{ ch.presence.leave(); }catch(e){} });
         });
-        ably.connection.on('disconnected', ()=>{
-          elOnlineDot.style.background = '#888';
-        });
+        ably.connection.on('disconnected', ()=>{ elOnlineDot.style.background = '#888'; });
       }catch(e){
         elOnlineBox.style.display='none';
       }
@@ -596,10 +522,7 @@
     }
 
     // boot
-    load();
-    recomputePerSec();
-    render();
-    unlockAchievements();
+    load(); recomputePerSec(); render(); unlockAchievements();
   </script>
 </body>
 </html>
