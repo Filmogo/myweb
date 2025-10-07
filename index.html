@@ -3,438 +3,470 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>🔥 Tap Game — Neo</title>
+  <title>🔥 Tap Fight Club</title>
   <meta name="theme-color" content="#0b1226" />
   <style>
     :root{
-      --vh: 1vh; /* обновляем скриптом ниже */
+      --vh: 1vh; /* фикс 100vh на мобилках — обновляем в JS */
       --bg:#0b1226;
-      --bg-grad1:#0b1226; --bg-grad2:#0f1f4a; --bg-grad3:#0b1226;
-      --card:#101a36cc; --card-strong:#0e1730;
+      --bg2:#0f1f4a;
+      --card:#101a36cc;
       --text:#e8f0ff; --muted:#b3c0ff; --accent:#6aa3ff; --accent2:#72ffd2;
       --warning:#ffd36a; --danger:#ff6a89; --good:#72ffa6;
       --shadow:0 10px 30px rgba(0,0,0,.35), 0 0 40px rgba(80,140,255,.15) inset;
       --radius:18px;
     }
     *{box-sizing:border-box}
-    html, body { height: 100%; }
+    html,body{height:100%}
     body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Noto Sans", Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background: radial-gradient(1200px 800px at 20% 10%, var(--bg-grad2), transparent),
-                  radial-gradient(900px 700px at 80% 90%, #102054, transparent),
-                  linear-gradient(180deg, var(--bg-grad1), var(--bg-grad3));
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Noto Sans", Arial;
+      background:
+        radial-gradient(1200px 800px at 20% 10%, var(--bg2), transparent),
+        radial-gradient(900px 700px at 80% 90%, #102054, transparent),
+        linear-gradient(180deg, var(--bg), var(--bg));
       color:var(--text);
-      height: calc(var(--vh) * 100); /* фикс 100vh на мобиле */
-      overflow: hidden;               /* убираем скролл */
+      height: calc(var(--vh) * 100); /* стабильно весь экран */
+      overflow: hidden;
       display:flex; align-items:center; justify-content:center;
     }
-    .app{
-      width:min(1050px,100%);
-      padding: clamp(14px, 2.2vw, 24px);
-      height: 100%;
-      display:flex; flex-direction:column;
+    .app{ width:min(1100px,100%); height:100%; display:flex; flex-direction:column; }
+    .topbar{
+      padding:12px 14px; display:flex; align-items:center; justify-content:space-between;
     }
-    .hud{
-      display:grid; gap:12px; grid-template-columns:1fr auto auto;
-      align-items:center; margin-bottom:12px;
-    }
-    .title{
-      font-weight:700; letter-spacing:.5px; display:flex; align-items:center; gap:10px;
-      text-shadow:0 2px 18px rgba(114,255,210,.35);
-    }
-    .badge{
-      font-size:12px; padding:4px 8px; border-radius:999px; background: #0a233f; color:var(--accent2);
-      border:1px solid #1b3c67; box-shadow: inset 0 0 10px rgba(114,255,210,.2);
-    }
-    .pill{
-      font-size:13px; padding:6px 10px; border-radius:999px; background: #0a1a38; color:var(--muted);
-      border: 1px solid #1a2a56;
-    }
+    .title{ display:flex; gap:10px; align-items:center; font-weight:800; letter-spacing:.3px }
+    .pill{ font-size:12px; padding:6px 10px; border-radius:999px; background:#0a1a38; color:var(--muted); border:1px solid #1a2a56; }
+    .coins{ display:flex; gap:8px; align-items:center; background:#0a1a38; border:1px solid #1a2a56; padding:8px 12px; border-radius:12px; }
+    .coins b{font-size:18px}
+    .content{ flex:1; min-height:0; padding:0 14px 80px; }
+    .card{ background:linear-gradient(180deg, rgba(20,36,80,.65), rgba(10,18,40,.65)); border:1px solid #1a2a56; border-radius:16px; box-shadow:var(--shadow); padding:16px; }
+    .grid{ display:grid; grid-template-columns:1.2fr .8fr; gap:16px; height:100%; }
+    @media (max-width: 880px){ .grid{ grid-template-columns:1fr; } }
 
-    .grid{
-      display:grid; grid-template-columns:1.2fr .8fr; gap:16px;
-      flex:1; min-height:0;
+    /* TAB BAR */
+    .tabs{
+      position:fixed; left:0; right:0; bottom:0;
+      display:grid; grid-template-columns:1fr 1fr 1fr;
+      background:#0a132b; border-top:1px solid #1a2a56;
+      padding:8px; gap:10px;
     }
-    @media (max-width: 880px){
-      .grid{ grid-template-columns:1fr; }
+    .tabbtn{
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+      padding:8px 6px; border-radius:14px; border:1px solid #1a2a56; color:var(--muted); background:#0a1a38;
+      cursor:pointer; user-select:none;
     }
+    .tabbtn.active{ color:var(--text); box-shadow: inset 0 0 24px rgba(114,255,210,.08); border-color:#2a4a86 }
+    .tabicon{ font-size:18px }
 
-    .card{
-      background:linear-gradient(180deg, rgba(20,36,80,.65), rgba(10,18,40,.65));
-      border:1px solid #1a2a56; border-radius:var(--radius);
-      box-shadow: var(--shadow);
-      padding:18px;
-    }
-    .card.vflex{ flex:1; display:flex; flex-direction:column; }
-
-    /* SCORE PANEL */
+    /* PLAY (left) */
     .score{
       display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:14px 16px; border-radius:14px; background:rgba(10,20,48,.5); border:1px solid #1a2a56;
+      padding:14px 16px; border-radius:14px; background:rgba(10,20,48,.5); border:1px solid #1a2a56; margin-bottom:12px;
     }
-    .score .big{
-      font-size: clamp(30px, 7vw, 48px);
-      font-weight:800; letter-spacing: .4px;
-    }
-    .muted{ color:var(--muted); font-size:14px }
-    .flex{ display:flex; align-items:center; gap:10px }
-    .vflex{ display:flex; flex-direction:column; gap:8px }
-
-    /* TAP AREA */
-    .tapwrap{
-      flex:1; display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:8px;
-    }
+    .big{ font-size: clamp(28px, 6.5vw, 46px); font-weight:800 }
+    .muted{ color:var(--muted); font-size:13px }
+    .vflex{ display:flex; flex-direction:column; gap:6px }
+    .tapwrap{ height:100%; display:flex; flex-direction:column; align-items:center; gap:16px }
     .tap{
-      width: min(380px, 70vmin);
-      aspect-ratio:1/1; border-radius:32px; border:1px solid #1e3470;
+      width:min(420px, 70vmin); aspect-ratio:1/1; border-radius:34px; border:1px solid #1e3470;
       background:
         radial-gradient(200px 200px at 70% 25%, rgba(112,182,255,.25), transparent),
         radial-gradient(400px 400px at 30% 80%, rgba(114,255,210,.15), transparent),
         linear-gradient(180deg, #1a2d63, #0d1a3b);
       box-shadow: 0 25px 50px rgba(0,0,0,.35), inset 0 -6px 20px rgba(0,0,0,.35), inset 0 0 60px rgba(114,255,210,.07);
-      display:grid; place-items:center; cursor:pointer; user-select:none; position:relative;
-      transition: transform .06s ease;
-      outline: none;
+      display:grid; place-items:center; cursor:pointer; user-select:none; position:relative; transition: transform .06s ease;
+      outline:none; margin:auto;
     }
     .tap:active{ transform: scale(.98) }
-    .tap .label{
-      font-size: clamp(20px, 5.5vw, 28px); color:#eaf2ff; opacity:.92; font-weight:700; letter-spacing:.3px;
-      text-align:center;
-    }
+    .tap .label{ font-size: clamp(20px, 5.5vw, 28px); font-weight:800; opacity:.95; text-align:center }
     .burst{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
-    .bubble{
-      position:absolute; font-weight:800; filter: drop-shadow(0 8px 16px rgba(0,0,0,.35));
-      animation: pop 700ms ease forwards;
-    }
-    @keyframes pop{
-      0%{ transform: translateY(0) scale(.7); opacity:0 }
-      15%{ opacity:1 }
-      100%{ transform: translateY(-60px) scale(1.1); opacity:0 }
-    }
+    .bubble{ position:absolute; font-weight:800; filter: drop-shadow(0 8px 16px rgba(0,0,0,.35)); animation: pop 700ms ease forwards; }
+    @keyframes pop{ 0%{ transform: translateY(0) scale(.7); opacity:0 } 15%{ opacity:1 } 100%{ transform: translateY(-60px) scale(1.1); opacity:0 } }
 
-    /* SHOP */
-    .shop .row{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:12px; border:1px solid #1a2a56; border-radius:12px; background: #0c1a3a7a;
-    }
-    .shop .row + .row { margin-top:10px }
-    .shop .title{ font-weight:700 }
-    .shop .cost{ color:var(--warning); font-weight:700 }
-    .shop button{
-      background: linear-gradient(180deg, #6aa3ff, #4b87ff);
-      border:none; color:#05122c; padding:10px 14px; border-radius:10px; font-weight:800; cursor:pointer;
-      box-shadow: 0 8px 20px rgba(80,140,255,.35);
-      transition: transform .08s ease, filter .2s ease; min-width:96px;
-    }
-    .shop button:disabled{ filter: grayscale(1) brightness(.7); cursor:not-allowed; }
-    .shop button:not(:disabled):active{ transform: translateY(1px) }
-    .tiny{ font-size:12px; color:var(--muted) }
+    /* SHOP (right) */
+    .shop .row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border:1px solid #1a2a56; border-radius:12px; background:#0c1a3a7a; }
+    .shop .row + .row{ margin-top:10px }
+    .shop .title{ font-weight:700 } .tiny{ font-size:12px; color:var(--muted) }
+    .shop button{ background: linear-gradient(180deg,#6aa3ff,#4b87ff); border:none; color:#05122c; padding:10px 14px; border-radius:10px; font-weight:800; cursor:pointer; box-shadow: 0 8px 20px rgba(80,140,255,.35); min-width:96px; }
+    .shop button:disabled{ filter: grayscale(1) brightness(.7); cursor:not-allowed }
 
-    /* FOOTER / ONLINE */
-    .footer{
-      margin-top:16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
-    }
-    .online{
-      padding:8px 12px; border-radius:999px; border:1px solid #1a2a56; background:#0a1a38;
-      display:flex; align-items:center; gap:8px; color:var(--muted);
-    }
-    .dot{ width:8px; height:8px; border-radius:50%; background: var(--good); box-shadow:0 0 18px var(--good) }
-    .controls{ display:flex; align-items:center; gap:10px; flex-wrap:wrap }
-    .ghost{
-      background:transparent; border:1px solid #1a2a56; color:var(--muted);
-      padding:10px 12px; border-radius:10px; cursor:pointer;
-    }
+    /* QUESTS */
+    .qcard{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border:1px solid #1a2a56; border-radius:12px; background:#0c1a3a7a; }
+    .qcard + .qcard{ margin-top:10px }
+    .progress{ width:140px; height:8px; background:#0a1a38; border:1px solid #1a2a56; border-radius:999px; position:relative; overflow:hidden }
+    .bar{ position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg, #72ffd2, #6aa3ff) }
+
+    /* LEADERBOARD */
+    .lbrow{ display:grid; grid-template-columns: 32px 1fr auto; gap:12px; align-items:center; padding:10px 12px; border:1px solid #1a2a56; border-radius:12px; background:#0c1a3a7a; }
+    .lbrow + .lbrow{ margin-top:10px }
+    .avatar{ width:32px; height:32px; border-radius:50%; background:#21356e; display:grid; place-items:center; font-weight:800 }
 
     /* TOAST */
-    .toast{
-      position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
-      background:#0b1a3a; border:1px solid #1a2a56; color:var(--text); padding:10px 14px; border-radius:12px;
-      box-shadow: var(--shadow); opacity:0; transition: opacity .2s, transform .2s;
-      z-index:50; pointer-events:none;
-    }
+    .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:#0b1a3a; border:1px solid #1a2a56; color:var(--text); padding:10px 14px; border-radius:12px; box-shadow:var(--shadow); opacity:0; transition: opacity .2s, transform .2s; z-index:50; pointer-events:none; }
     .toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
-
-    /* ACHIEVEMENTS */
-    .achv{ display:flex; gap:10px; flex-wrap:wrap }
-    .chip{
-      border:1px solid #1a2a56; background:#0a1a38; color:var(--muted);
-      border-radius:999px; padding:6px 10px; font-size:12px
-    }
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="hud">
-      <div class="title">
-        <span style="font-size:22px">🔥 Tap Game — Neo</span>
-        <span class="badge">v1.0</span>
-        <span class="pill" id="saveStatus">авто-сохранение</span>
-      </div>
-      <div class="pill">комбо: <b id="combo">x1.0</b></div>
-      <div class="pill">уровень: <b id="level">1</b></div>
+    <!-- TOP -->
+    <div class="topbar">
+      <div class="title">🥊 <span>Tap Fight Club</span> <span class="pill" id="saveStatus">авто-сохранение</span></div>
+      <div class="coins">💰 <b id="coins">0</b></div>
     </div>
 
-    <div class="grid">
-      <!-- LEFT: GAME -->
-      <div class="card vflex">
-        <div class="score">
-          <div class="vflex">
-            <div class="muted">очки</div>
-            <div class="big" id="score">0</div>
-          </div>
-          <div class="vflex">
-            <div class="muted">за тап</div>
-            <div class="big" id="perTap">+1</div>
-          </div>
-          <div class="vflex">
-            <div class="muted">в сек.</div>
-            <div class="big" id="perSec">0</div>
-          </div>
-        </div>
-
-        <div class="tapwrap">
-          <button class="tap" id="tapBtn" aria-label="Жми!">
-            <div class="label">
-              ЖМИ!
-              <div class="tiny" id="tapHint">мощнее с комбо</div>
+    <!-- CONTENT -->
+    <div class="content" id="tab-play" role="tabpanel">
+      <div class="grid">
+        <!-- LEFT: GAME -->
+        <div class="card" style="display:flex; flex-direction:column">
+          <div class="score">
+            <div class="vflex">
+              <div class="muted">очки</div>
+              <div class="big" id="score">0</div>
             </div>
-            <div class="burst" id="burst"></div>
-          </button>
-          <div class="achv" id="achv"></div>
+            <div class="vflex">
+              <div class="muted">за тап</div>
+              <div class="big" id="perTap">+1</div>
+            </div>
+            <div class="vflex">
+              <div class="muted">в сек.</div>
+              <div class="big" id="perSec">0</div>
+            </div>
+            <div class="vflex">
+              <div class="muted">комбо</div>
+              <div class="big" id="combo">x1.0</div>
+            </div>
+          </div>
+
+          <div class="tapwrap">
+            <button class="tap" id="tapBtn" aria-label="Жми!">
+              <div class="label">ЖМИ!<div class="muted" style="font-size:12px">удерживай темп для комбо</div></div>
+              <div class="burst" id="burst"></div>
+            </button>
+
+            <div class="card" style="width:100%; max-width:680px">
+              <div class="shop" id="shop"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: SIDE INFO -->
+        <div class="card">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
+            <div style="font-weight:800">Профиль</div>
+            <button class="pill" id="resetBtn" title="Сбросить прогресс">Сброс</button>
+          </div>
+          <div class="vflex">
+            <div class="qcard">
+              <div class="vflex">
+                <div class="muted">ник</div>
+                <div><b id="playerName">гость</b></div>
+              </div>
+              <button class="tabbtn" id="editName" style="grid-template-columns:unset;padding:8px 12px">✏️ Переименовать</button>
+            </div>
+
+            <div class="qcard" id="onlineBox" style="display:none">
+              <div class="vflex">
+                <div class="muted">сейчас онлайн</div>
+                <div><b id="online">—</b></div>
+              </div>
+              <div class="pill" id="netState">●</div>
+            </div>
+
+            <div class="qcard">
+              <div class="vflex">
+                <div class="muted">уровень</div>
+                <div><b id="level">1</b></div>
+              </div>
+              <div class="vflex">
+                <div class="muted">апгрейды</div>
+                <div><b id="upgCount">0</b></div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- RIGHT: SHOP -->
+    <!-- QUESTS -->
+    <div class="content" id="tab-quests" role="tabpanel" hidden>
       <div class="card">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px">
-          <div class="title" style="font-size:18px">Магазин апгрейдов</div>
-          <button class="ghost" id="resetBtn" title="Сбросить прогресс">Сброс</button>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
+          <div style="font-weight:800; font-size:18px">Ежедневные задания</div>
+          <div class="pill">сброс: <b id="resetAt">00:00</b></div>
         </div>
-        <div class="shop" id="shop"></div>
+        <div id="quests"></div>
       </div>
     </div>
 
-    <div class="footer">
-      <div class="online" id="onlineBox" style="display:none">
-        <span class="dot" id="onlineDot"></span>
-        Сейчас онлайн: <b id="online">—</b>
-      </div>
-      <div class="controls">
-        <button class="ghost" id="soundBtn">🔊 Звук: выкл</button>
-        <button class="ghost" id="shareBtn">📤 Поделиться очками</button>
+    <!-- LEADERBOARD -->
+    <div class="content" id="tab-lb" role="tabpanel" hidden>
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
+          <div style="font-weight:800; font-size:18px">Лидерборд</div>
+          <button class="tabbtn" id="syncLB" style="grid-template-columns:unset;padding:8px 12px">↻ Обновить</button>
+        </div>
+        <div id="lb"></div>
+        <div class="muted" style="margin-top:10px">* глобальный сервер не подключён: показываем локальный рейтинг и соперников-ботов. Могу подключить облако (Vercel/Supabase) — скажи.</div>
       </div>
     </div>
+
+    <!-- TABS -->
+    <nav class="tabs" role="tablist">
+      <button class="tabbtn active" data-tab="play"><div class="tabicon">🎮</div>Игра</button>
+      <button class="tabbtn" data-tab="quests"><div class="tabicon">📋</div>Задания</button>
+      <button class="tabbtn" data-tab="lb"><div class="tabicon">🏆</div>Лидерборд</button>
+    </nav>
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <!-- Ably Realtime (опционально для счётчика онлайн) -->
+  <!-- Ably Realtime (опционально для онлайна) -->
   <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
 
   <script>
-    // ====== ФИКС 100vh НА МОБИЛЕ ======
-    function setVH(){
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', vh + 'px');
-    }
-    setVH();
-    window.addEventListener('resize', setVH);
-    window.addEventListener('orientationchange', setVH);
-    setTimeout(setVH, 50);
+    // ===== 100vh FIX =====
+    function setVH(){ document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px'); }
+    setVH(); window.addEventListener('resize', setVH); window.addEventListener('orientationchange', setVH); setTimeout(setVH, 50);
 
-    // =========================
-    //      GAME STATE
-    // =========================
+    // ===== STATE =====
     const state = {
-      score: 0,
-      basePerTap: 1,
-      tapMultiplier: 1,
-      combo: 1,
-      maxCombo: 5,
-      comboDecayMs: 1800,
-      lastTapAt: 0,
-      perSec: 0,
-      level: 1,
-      sound: false,
-      autoClickers: 0,
+      name: 'гость',
+      score: 0, coins: 0,
+      basePerTap: 1, tapMultiplier: 1, combo: 1, maxCombo: 5, comboDecayMs: 1800, lastTapAt: 0,
+      perSec: 0, level: 1, sound: false, autoClickers: 0,
       upgrades: { tapPlus:0, mult:0, autoclick:0, comboCap:0 },
+      lastDaily: null, // 'YYYY-MM-DD'
+      quests: {},      // прогресс по ключам
+      leaderboard: [], // локальные записи
+      uid: (()=> 'u-' + Math.random().toString(16).slice(2))(),
     };
 
-    const shopDefs = [
-      { key:'tapPlus',   title:'Сильнее палец (+1 за тап)', desc:'Увеличивает базовую силу нажатий', baseCost:20,  costGrow:1.25, icon:'🖐️',
-        apply:()=>{ state.basePerTap += 1; } },
-      { key:'mult',      title:'Множитель тапов (x1.15)',  desc:'Множит очки за тап',                 baseCost:100, costGrow:1.6,  icon:'✨',
-        apply:()=>{ state.tapMultiplier *= 1.15; } },
-      { key:'autoclick', title:'Автокликер (+1/s)',         desc:'Каждую секунду добавляет очки',      baseCost:150, costGrow:1.55, icon:'⚙️',
-        apply:()=>{ state.autoClickers += 1; recomputePerSec(); } },
-      { key:'comboCap',  title:'Комбо-лимит (+1 к макс)',   desc:'Максимальный множитель комбо ↑',     baseCost:180, costGrow:1.7,  icon:'🔥',
-        apply:()=>{ state.maxCombo += 1; } },
-    ];
-    function costFor(key, level){ const d=shopDefs.find(x=>x.key===key); return Math.floor(d.baseCost*Math.pow(d.costGrow,level)); }
+    // ===== ELEMENTS =====
+    const $ = sel => document.querySelector(sel);
+    const elScore = $('#score'), elPerTap = $('#perTap'), elPerSec = $('#perSec'), elCombo = $('#combo');
+    const elLevel = $('#level'), elUpgCount = $('#upgCount'), elCoins = $('#coins'), elPlayerName = $('#playerName');
+    const elTap = $('#tapBtn'), elBurst = $('#burst'), elShop = $('#shop'), elToast = $('#toast');
+    const elOnline = $('#online'), elOnlineBox = $('#onlineBox'), elNetState = $('#netState');
+    const elQuests = $('#quests'), elResetAt = $('#resetAt'), elLB = $('#lb');
 
-    // =========================
-    //      SAVE / LOAD
-    // =========================
-    function save(){
-      localStorage.setItem('tapneo', JSON.stringify(state));
-      flashSave();
-    }
+    // ===== SAVE/LOAD =====
+    function save(){ localStorage.setItem('tfc-save', JSON.stringify(state)); flashSave(); }
     function load(){
       try{
-        const raw = localStorage.getItem('tapneo');
-        if(!raw) return;
+        const raw = localStorage.getItem('tfc-save'); if(!raw) return;
         const prev = JSON.parse(raw);
         Object.assign(state, prev);
+        // перегенерим uid если вдруг отсутствует
+        if(!state.uid) state.uid = 'u-' + Math.random().toString(16).slice(2);
       }catch(e){}
     }
+    function flashSave(){ $('#saveStatus').textContent = 'сохранено ✔'; setTimeout(()=>$('#saveStatus').textContent='авто-сохранение', 1000); }
 
-    // =========================
-    //      UI BINDINGS
-    // =========================
-    const elScore = document.getElementById('score');
-    const elPerTap = document.getElementById('perTap');
-    const elPerSec = document.getElementById('perSec');
-    const elTap = document.getElementById('tapBtn');
-    const elBurst = document.getElementById('burst');
-    const elCombo = document.getElementById('combo');
-    const elLevel = document.getElementById('level');
-    const elShop = document.getElementById('shop');
-    const elReset = document.getElementById('resetBtn');
-    const elToast = document.getElementById('toast');
-    const elAchv = document.getElementById('achv');
-    const elSaveStatus = document.getElementById('saveStatus');
-    const elSoundBtn = document.getElementById('soundBtn');
-    const elShareBtn = document.getElementById('shareBtn');
-    const elOnline = document.getElementById('online');
-    const elOnlineBox = document.getElementById('onlineBox');
-    const elOnlineDot = document.getElementById('onlineDot');
+    // ===== UTILS =====
+    const fmt = n => Math.floor(n).toLocaleString('ru-RU');
+    const todayKey = () => new Date().toISOString().slice(0,10); // YYYY-MM-DD
 
-    function flashSave(){ elSaveStatus.textContent='сохранено ✔'; setTimeout(()=>elSaveStatus.textContent='авто-сохранение',1000); }
-    function fmt(n){ return Math.floor(n).toLocaleString('ru-RU'); }
+    // ===== GAME CORE =====
     function perTapNow(){ return state.basePerTap * state.tapMultiplier * state.combo; }
     function recomputePerSec(){ state.perSec = state.autoClickers * (state.basePerTap * 0.5); }
-
     function render(){
       elScore.textContent = fmt(state.score);
       elPerTap.textContent = '+' + fmt(perTapNow());
       elPerSec.textContent = fmt(state.perSec);
-      elCombo.textContent = 'x' + (state.combo).toFixed(1);
+      elCombo.textContent = 'x' + state.combo.toFixed(1);
       elLevel.textContent = state.level;
-      renderShop();
+      elUpgCount.textContent = Object.values(state.upgrades).reduce((a,b)=>a+b,0);
+      elCoins.textContent = fmt(state.coins);
+      elPlayerName.textContent = state.name;
+      renderShop(); renderQuests(); renderLeaderboard();
     }
-
-    function addBubble(text, color){
-      const b=document.createElement('div');
-      b.className='bubble'; b.textContent=text;
-      b.style.left=(40+Math.random()*40)+'%';
-      b.style.top=(40+Math.random()*20)+'%';
-      b.style.color=color||'#cfe4ff';
-      b.style.fontSize=(16+Math.random()*10)+'px';
-      elBurst.appendChild(b);
-      setTimeout(()=>b.remove(),800);
-    }
-
     function levelUpIfNeeded(){
-      const need = Math.pow(10, state.level) * 100;
-      if(state.score >= need){
-        state.level++; toast(`Новый уровень ${state.level}!`, 1800); unlockAchievements();
-      }
+      const need = Math.pow(10, state.level) * 120;
+      if(state.score >= need){ state.level++; toast(`Новый уровень ${state.level}!`, 1600); }
     }
-
-    function unlockAchievements(){
-      const list=[];
-      if(state.score>=100) list.push('💠 100 очков');
-      if(state.score>=1000) list.push('💠 1000 очков');
-      if(state.autoClickers>=5) list.push('🧪 5 автокликеров');
-      if(state.maxCombo>=7) list.push('🔥 комбо-мастер');
-      elAchv.innerHTML=''; list.forEach(t=>{ const c=document.createElement('div'); c.className='chip'; c.textContent=t; elAchv.appendChild(c); });
+    function addBubble(text, color){
+      const b=document.createElement('div'); b.className='bubble'; b.textContent=text;
+      b.style.left=(40+Math.random()*40)+'%'; b.style.top=(40+Math.random()*20)+'%';
+      b.style.color=color||'#cfe4ff'; b.style.fontSize=(16+Math.random()*10)+'px';
+      elBurst.appendChild(b); setTimeout(()=>b.remove(),800);
     }
-
-    // =========================
-    //      TAP LOGIC
-    // =========================
     function tap(){
       const now=Date.now(), dt=now-state.lastTapAt; state.lastTapAt=now;
-      state.combo = dt<state.comboDecayMs ? Math.min(state.combo+0.1, state.maxCombo) : 1;
-
+      state.combo = dt<state.comboDecayMs ? Math.min(state.combo+0.12, state.maxCombo) : 1;
       const add = perTapNow();
-      state.score += add;
-      addBubble('+'+fmt(add), '#cfe4ff');
+      state.score += add; state.coins += Math.max(1, Math.floor(add/10));
+      addBubble('+'+fmt(add));
       levelUpIfNeeded();
-      render();
-      autoSaveMaybe();
-      if(state.sound) playTick();
+      tickQuest('taps', 1);
+      tickQuest('earn', add);
+      autoSaveMaybe(); render();
     }
     elTap.addEventListener('click', tap);
     elTap.addEventListener('keydown', e=>{ if(e.code==='Space'||e.code==='Enter') tap(); });
 
-    // combo decay
-    setInterval(()=>{
+    setInterval(()=>{ // combo decay
       if(!state.lastTapAt) return;
       if(Date.now()-state.lastTapAt>state.comboDecayMs && state.combo>1){
-        state.combo=Math.max(1, +(state.combo-0.1).toFixed(1));
-        elCombo.textContent='x'+state.combo.toFixed(1);
+        state.combo=Math.max(1, +(state.combo-0.1).toFixed(1)); elCombo.textContent='x'+state.combo.toFixed(1);
       }
     },150);
 
-    // =========================
-    //      SHOP
-    // =========================
-    function renderShop(){
-      elShop.innerHTML='';
-      shopDefs.forEach(def=>{
-        const lvl = state.upgrades[def.key]||0;
-        const price = costFor(def.key, lvl);
-
-        const row=document.createElement('div'); row.className='row';
-        const left=document.createElement('div');
-        left.innerHTML=`<div class="title">${def.icon} ${def.title}</div>
-                        <div class="tiny">${def.desc}</div>
-                        <div class="tiny">уровень: <b>${lvl}</b></div>`;
-        const right=document.createElement('div');
-        const btn=document.createElement('button');
-        btn.textContent=`Купить — ${fmt(price)}`;
-        btn.disabled=state.score<price;
-        btn.addEventListener('click', ()=>{
-          if(state.score<price) return;
-          state.score-=price;
-          def.apply();
-          state.upgrades[def.key]=lvl+1;
-          recomputePerSec();
-          render();
-          toast(`Куплено: ${def.title}`);
-          autoSaveNow();
-        });
-        right.appendChild(btn);
-        row.appendChild(left); row.appendChild(right);
-        elShop.appendChild(row);
-      });
-    }
-
-    // passive income
-    setInterval(()=>{
+    setInterval(()=>{ // passive income
       if(state.perSec>0){
-        state.score += state.perSec;
-        addBubble('+'+fmt(state.perSec), '#72ffd2');
-        levelUpIfNeeded(); render(); autoSaveMaybe();
+        state.score += state.perSec; state.coins += Math.max(1, Math.floor(state.perSec/10));
+        addBubble('+'+fmt(state.perSec), '#72ffd2'); levelUpIfNeeded(); tickQuest('earn', state.perSec);
+        autoSaveMaybe(); render();
       }
     },1000);
 
-    // =========================
-    //      SAVE / RESET
-    // =========================
-    let saveCooldown=false;
-    function autoSaveMaybe(){ if(saveCooldown) return; saveCooldown=true; setTimeout(()=>{ save(); saveCooldown=false; },700); }
-    function autoSaveNow(){ save(); }
-    document.getElementById('resetBtn').addEventListener('click', ()=>{
+    // ===== SHOP =====
+    const shopDefs = [
+      { key:'tapPlus',   title:'Сильнее удар (+1 за тап)', desc:'Увеличивает базовую силу нажатий', baseCost:20,  grow:1.25, apply:()=>{ state.basePerTap += 1; } },
+      { key:'mult',      title:'Множитель (x1.15)',        desc:'Множит очки за тап',                 baseCost:120, grow:1.6,  apply:()=>{ state.tapMultiplier *= 1.15; } },
+      { key:'autoclick', title:'Автокликер (+1/s)',        desc:'Добавляет пассивный доход',          baseCost:180, grow:1.55, apply:()=>{ state.autoClickers += 1; recomputePerSec(); } },
+      { key:'comboCap',  title:'Комбо-предел (+1)',        desc:'Увеличивает максимум комбо',         baseCost:220, grow:1.7,  apply:()=>{ state.maxCombo += 1; } },
+    ];
+    const price = (def, lvl)=> Math.floor(def.baseCost * Math.pow(def.grow, lvl||0));
+    function renderShop(){
+      elShop.innerHTML='';
+      shopDefs.forEach(def=>{
+        const lvl = state.upgrades[def.key]||0; const cost = price(def, lvl);
+        const row = document.createElement('div'); row.className='row';
+        const left = document.createElement('div');
+        left.innerHTML = `<div class="title">${def.title}</div><div class="tiny">${def.desc}</div><div class="tiny">уровень: <b>${lvl}</b></div>`;
+        const right = document.createElement('div');
+        const btn = document.createElement('button'); btn.textContent = `Купить — ${fmt(cost)}💰`;
+        btn.disabled = state.coins < cost;
+        btn.addEventListener('click', ()=>{
+          if(state.coins < cost) return;
+          state.coins -= cost; def.apply(); state.upgrades[def.key]=(lvl+1);
+          tickQuest('buy', 1);
+          render(); autoSaveNow(); toast(`Куплено: ${def.title}`);
+        });
+        right.appendChild(btn);
+        row.appendChild(left); row.appendChild(right); elShop.appendChild(row);
+      });
+    }
+
+    // ===== DAILY QUESTS =====
+    const dailyDefs = [
+      { key:'taps', title:'Сделай 200 тапов', target:200, reward:200 },
+      { key:'earn', title:'Заработай 5,000 очков', target:5000, reward:300 },
+      { key:'buy',  title:'Купи 1 апгрейд', target:1, reward:150 },
+      { key:'visit',title:'Зайди сегодня в игру', target:1, reward:100 },
+    ];
+    function ensureDaily(){
+      const today = todayKey();
+      if(state.lastDaily !== today){
+        state.lastDaily = today;
+        state.quests = {}; // сброс прогресса
+        dailyDefs.forEach(q=> state.quests[q.key] = { done:false, val: 0 });
+        state.quests.visit.val = 1; // отметка визита
+      }
+    }
+    function tickQuest(key, inc){
+      ensureDaily();
+      const q = state.quests[key]; if(!q || q.done) return;
+      q.val += inc;
+      const def = dailyDefs.find(d=>d.key===key);
+      if(q.val >= def.target){ q.done = true; state.coins += def.reward; toast(`Задание: «${def.title}» — выполнено! +${def.reward}💰`); }
+      renderQuests(); autoSaveMaybe();
+    }
+    function renderQuests(){
+      ensureDaily();
+      elQuests.innerHTML='';
+      // время до полуночи
+      const now = new Date(); const midnight = new Date(now); midnight.setHours(24,0,0,0);
+      const left = midnight - now; const hh = Math.floor(left/3600000), mm = Math.floor((left%3600000)/60000);
+      elResetAt.textContent = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+
+      dailyDefs.forEach(def=>{
+        const q = state.quests[def.key] || {val:0,done:false};
+        const pct = Math.min(100, Math.floor((q.val/def.target)*100));
+        const row = document.createElement('div'); row.className='qcard';
+        const leftCol = document.createElement('div');
+        leftCol.innerHTML = `<div><b>${def.title}</b></div>
+                             <div class="tiny">награда: +${def.reward}💰</div>
+                             <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
+                             <div class="tiny">${Math.min(q.val, def.target)} / ${def.target}</div>`;
+        const rightCol = document.createElement('div');
+        const btn = document.createElement('button'); btn.className='tabbtn'; btn.style.padding='8px 12px';
+        btn.textContent = q.done ? '✓ Готово' : (pct>=100 ? 'Забрать' : 'В процессе');
+        btn.disabled = !(!q.done && pct>=100);
+        btn.addEventListener('click', ()=>{
+          if(q.done || pct<100) return;
+          q.done = true; state.coins += def.reward; renderQuests(); autoSaveNow(); toast(`+${def.reward}💰`);
+        });
+        rightCol.appendChild(btn);
+        row.appendChild(leftCol); row.appendChild(rightCol); elQuests.appendChild(row);
+      });
+    }
+
+    // ===== LEADERBOARD (локальный) =====
+    function seedBotsIfEmpty(){
+      if(!state.leaderboard || state.leaderboard.length===0){
+        state.leaderboard = [
+          { uid:'bot1', name:'NeoHam', score: 120000 },
+          { uid:'bot2', name:'Foxy', score: 78000 },
+          { uid:'bot3', name:'ByteCat', score: 54000 },
+          { uid:'bot4', name:'Sakura', score: 31000 },
+          { uid:'bot5', name:'Rider', score: 18000 },
+        ];
+      }
+    }
+    function upsertSelfToLB(){
+      const idx = state.leaderboard.findIndex(r=>r.uid===state.uid);
+      const me = { uid: state.uid, name: state.name, score: Math.floor(state.score) };
+      if(idx>=0) state.leaderboard[idx] = me; else state.leaderboard.push(me);
+      state.leaderboard.sort((a,b)=>b.score-a.score);
+      state.leaderboard = state.leaderboard.slice(0, 50);
+    }
+    function renderLeaderboard(){
+      seedBotsIfEmpty(); upsertSelfToLB();
+      elLB.innerHTML='';
+      state.leaderboard.forEach((row,i)=>{
+        const el = document.createElement('div'); el.className='lbrow';
+        const you = row.uid===state.uid;
+        el.innerHTML = `
+          <div>${i+1}</div>
+          <div style="display:flex; align-items:center; gap:10px">
+            <div class="avatar">${(row.name||'U')[0].toUpperCase()}</div>
+            <div>
+              <div><b>${row.name}${you?' (ты)':''}</b></div>
+              <div class="tiny">${you?'ID: '+state.uid:''}</div>
+            </div>
+          </div>
+          <div><b>${fmt(row.score)}</b></div>`;
+        elLB.appendChild(el);
+      });
+    }
+
+    // ===== TABS =====
+    document.querySelectorAll('.tabbtn[data-tab]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.tabbtn[data-tab]').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('[role="tabpanel"]').forEach(p=>p.hidden=true);
+        document.getElementById('tab-'+tab).hidden=false;
+      });
+    });
+    $('#syncLB').addEventListener('click', ()=>{ renderLeaderboard(); toast('Лидерборд обновлён'); });
+
+    // ===== NAME / RESET =====
+    $('#editName').addEventListener('click', ()=>{
+      const v = prompt('Твой ник:', state.name || '');
+      if(!v) return;
+      state.name = v.toString().slice(0,20) || 'гость';
+      render(); autoSaveNow();
+    });
+    $('#resetBtn').addEventListener('click', ()=>{
       if(!confirm('Сбросить прогресс?')) return;
-      localStorage.removeItem('tapneo'); location.reload();
+      localStorage.removeItem('tfc-save'); location.reload();
     });
 
-    // =========================
-    //    SOUND + SHARE
-    // =========================
+    // ===== SOUND (минимальный щелчок) =====
     let audioCtx, tickBuf;
     async function initAudio(){
       try{
@@ -447,82 +479,55 @@
       }catch(e){}
     }
     function playTick(){
-      if(!audioCtx || !tickBuf) return;
+      if(!audioCtx||!tickBuf) return;
       const src=audioCtx.createBufferSource(); src.buffer=tickBuf;
       const gain=audioCtx.createGain(); gain.gain.value=.2;
       src.connect(gain).connect(audioCtx.destination); src.start();
     }
-    document.getElementById('soundBtn').addEventListener('click', async ()=>{
-      if(!audioCtx){ await initAudio(); }
-      state.sound=!state.sound;
-      document.getElementById('soundBtn').textContent = state.sound? '🔊 Звук: вкл' : '🔊 Звук: выкл';
-      autoSaveNow();
-    });
+    // опционально: включение/выключение звука по долгому тапу
+    elTap.addEventListener('contextmenu', e=>{ e.preventDefault(); });
 
-    document.getElementById('shareBtn').addEventListener('click', async ()=>{
-      const text = `Мои очки в Tap Game — Neo: ${fmt(state.score)}!`;
-      try{
-        if(navigator.share){
-          await navigator.share({text, url: location.href, title:'Tap Game — Neo'});
-        }else{
-          await navigator.clipboard.writeText(text + ' ' + location.href);
-          toast('Скопировано в буфер обмена!');
-        }
-      }catch(e){}
-    });
-
-    // =========================
-    //      TOAST
-    // =========================
-    let toastT;
-    function toast(msg, ms=1200){
-      elToast.textContent = msg;
-      elToast.classList.add('show');
-      clearTimeout(toastT);
-      toastT = setTimeout(()=> elToast.classList.remove('show'), ms);
-    }
-
-    // =========================
-    //      ONLINE (ABLY)
-    // =========================
+    // ===== ONLINE (Ably, опционально) =====
     (function setupOnline(){
-      const ABLY_KEY = 'YOUR_ABLY_KEY_HERE'; // ← подставь свой ключ Ably или оставь как есть — блок скроется
-      if(!ABLY_KEY || ABLY_KEY.includes('YOUR_ABLY_KEY_HERE')){
-        elOnlineBox.style.display='none';
-        return;
-      }
+      const ABLY_KEY = 'YOUR_ABLY_KEY_HERE'; // подставь ключ — появится блок «онлайн»
+      if(!ABLY_KEY || ABLY_KEY.includes('YOUR_ABLY_KEY_HERE')){ elOnlineBox.style.display='none'; return; }
       try{
         const ably = new Ably.Realtime({ key: ABLY_KEY });
-        const ch = ably.channels.get('tapneo-online');
-        const me = 'u-' + Math.random().toString(16).slice(2);
-        elOnlineBox.style.display='flex';
+        const ch = ably.channels.get('tfc-online');
+        const me = state.uid; elOnlineBox.style.display='block';
 
-        ably.connection.on('connected', ()=>{
-          elOnlineDot.style.background = 'var(--good)';
-          ch.presence.enter({ id: me }, ()=>{});
-          const refresh = ()=> ch.presence.get((err, members)=>{
-            if(!err && members){ elOnline.textContent = members.length; }
-          });
-          refresh();
-          ch.presence.subscribe(['enter','leave','update'], refresh);
-          window.addEventListener('beforeunload', ()=>{ try{ ch.presence.leave(); }catch(e){} });
-          window.addEventListener('pagehide', ()=>{ try{ ch.presence.leave(); }catch(e){} });
-        });
-        ably.connection.on('disconnected', ()=>{ elOnlineDot.style.background = '#888'; });
-      }catch(e){
-        elOnlineBox.style.display='none';
-      }
+        ably.connection.on('connected', ()=>{ elNetState.textContent='● online'; elNetState.className='pill'; });
+        ch.presence.enter({ id: me }, ()=>{});
+        const refresh = ()=> ch.presence.get((err, members)=>{ if(!err&&members){ elOnline.textContent = members.length; }});
+        refresh(); ch.presence.subscribe(['enter','leave','update'], refresh);
+        window.addEventListener('beforeunload', ()=>{ try{ ch.presence.leave(); }catch(e){} });
+        window.addEventListener('pagehide', ()=>{ try{ ch.presence.leave(); }catch(e){} });
+      }catch(e){ elOnlineBox.style.display='none'; }
     })();
 
-    // =========================
-    //   TELEGRAM WEBAPP UX
-    // =========================
-    if (window.Telegram?.WebApp) {
-      try { Telegram.WebApp.expand(); } catch(e){}
-    }
+    // ===== AUTO SAVE =====
+    let saveCooldown=false;
+    function autoSaveMaybe(){ if(saveCooldown) return; saveCooldown=true; setTimeout(()=>{ save(); saveCooldown=false; }, 700); }
+    function autoSaveNow(){ save(); }
 
-    // boot
-    load(); recomputePerSec(); render(); unlockAchievements();
+    // ===== BOOT =====
+    function tryGetTGName(){
+      try{
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if(tgUser){
+          const nm = tgUser.username || tgUser.first_name || 'игрок';
+          state.name = nm;
+        }
+        if(window.Telegram?.WebApp){ Telegram.WebApp.expand?.(); }
+      }catch(e){}
+    }
+    load(); tryGetTGName(); ensureDaily(); recomputePerSec(); render(); initAudio();
+    // приветственный квест
+    tickQuest('visit', 0);
+
+    // ===== EVENTS =====
+    // быстрый тап (звуки)
+    elTap.addEventListener('click', ()=>{ if(audioCtx && tickBuf) playTick(); });
   </script>
 </body>
 </html>
